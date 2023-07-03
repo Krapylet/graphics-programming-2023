@@ -337,7 +337,7 @@ void SandApplication::InitializeModels()
     std::vector<unsigned short> indices; // EBO
 
     // 4. Generate verticies
-    glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
 
     for (int r = 0; r < rows; r++)
     {
@@ -345,8 +345,8 @@ void SandApplication::InitializeModels()
         {
             // 4.1 Calculate position
             float x = r * width / (rows - 1);
-            float y = c * length / (collumns - 1);
-            float z = 0;
+            float y = 0;
+            float z = c * length / (collumns - 1);
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
 
@@ -356,7 +356,7 @@ void SandApplication::InitializeModels()
     }
 
     // 6. Calculate triangles
-    // We loop over rows-1 and collumns-1 because for each vertex 'o', we add two triangles as seen in this picture
+    // We loop over rows-1 and collumns-1 because for each vertex 'o', we add two triangles as seen in this sketch:
     //  o---*   *     // A---B
     //  | / |         // | / |
     //  *---*   *     // C---D
@@ -373,11 +373,11 @@ void SandApplication::InitializeModels()
             int D = r + rows * (c + 1) + 1;
 
             // 5.2 Add tris to the EBO. The front face is determined by counter clockwise winding.
-            // Upper triangle: A C B
-            indices.push_back(A); indices.push_back(C); indices.push_back(B);
+            // Upper triangle: A B C
+            indices.push_back(A); indices.push_back(B); indices.push_back(C);
 
-            // Lower triangle: B C D
-            indices.push_back(B); indices.push_back(C); indices.push_back(D);
+            // Lower triangle: B D C
+            indices.push_back(B); indices.push_back(D); indices.push_back(C);
         }
     }
 
