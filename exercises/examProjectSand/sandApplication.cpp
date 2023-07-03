@@ -26,8 +26,13 @@
 #include <ituGL/scene/ImGuiSceneVisitor.h>
 #include <imgui.h>
 
+// Includes for manual plane generation.
+#include <ituGL/scene/Transform.h>
+#include <ituGL/geometry/VertexFormat.h>
+#include <ituGL/geometry/Mesh.h>
+
 SandApplication::SandApplication()
-    : Application(1024, 1024, "Post FX Scene Viewer demo")
+    : Application(1024, 1024, "Cool Sand shader demo")
     , m_renderer(GetDevice())
     , m_sceneFramebuffer(std::make_shared<FramebufferObject>())
     , m_exposure(1.0f)
@@ -46,10 +51,13 @@ void SandApplication::Initialize()
     Application::Initialize();
 
     // Initialize DearImGUI
+    // Commonly used open source UI framework. The one used in CSG and the like.
     m_imGui.Initialize(GetMainWindow());
 
     InitializeCamera();
     InitializeLights();
+
+    // Materials are stored as field variables accessable from the the application class.
     InitializeMaterials();
     InitializeModels();
     InitializeRenderer();
@@ -150,7 +158,7 @@ void SandApplication::InitializeMaterials()
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
             },
             nullptr
-        );
+                );
 
         // Filter out uniforms that are not material properties
         ShaderUniformCollection::NameSet filteredUniforms;
@@ -190,7 +198,7 @@ void SandApplication::InitializeMaterials()
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
             },
             nullptr
-        );
+                );
 
         // Filter out uniforms that are not material properties
         ShaderUniformCollection::NameSet filteredUniforms;
@@ -248,7 +256,7 @@ void SandApplication::InitializeMaterials()
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
             },
             m_renderer.GetDefaultUpdateLightsFunction(*shaderProgramPtr)
-        );
+                );
 
         // Create material
         m_deferredMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
@@ -277,7 +285,7 @@ void SandApplication::InitializeModels()
     // Flip vertically textures loaded by the model loader
     loader.GetTexture2DLoader().SetFlipVertical(true);
 
-    // Link vertex properties to attributes
+    // Link vertex properties to attributes found in the matrial provided to the loader.
     loader.SetMaterialAttribute(VertexAttribute::Semantic::Position, "VertexPosition");
     loader.SetMaterialAttribute(VertexAttribute::Semantic::Normal, "VertexNormal");
     loader.SetMaterialAttribute(VertexAttribute::Semantic::Tangent, "VertexTangent");
@@ -290,9 +298,100 @@ void SandApplication::InitializeModels()
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::NormalTexture, "NormalTexture");
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::SpecularTexture, "SpecularTexture");
 
-    // Load models
+    // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
+    // The loader probably needs to be configured differntly for each different material we use for an object.
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+
+    // add second canon to test whether it can be moved
+    std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
+    std::shared_ptr<Transform> transform = secondCanon->GetTransform();
+    transform->SetTranslation(transform->GetTranslation() + glm::vec3(1, 1, 1));
+    m_scene.AddSceneNode(secondCanon);
+
+    // Generate plane.
+    // 
+    // 1. Define constants
+    float width = 10;
+    float length = 10;
+    int rows = 10;
+    int collumns = 10;
+    int vertexCount = rows * collumns;
+
+    // 2. Define the vertex structure
+    struct Vertex
+    {
+        Vertex() = default;
+        Vertex(const glm::vec3& position, const glm::vec3& normal) : position(position), normal(normal) {}
+        glm::vec3 position;
+        glm::vec3 normal;
+    };
+
+    // 3. Define the vertex format matching vertex structure
+    VertexFormat vertexFormat;
+    vertexFormat.AddVertexAttribute<float>(3);
+    vertexFormat.AddVertexAttribute<float>(3);
+
+    // Initialize VBO and EBO
+    std::vector<Vertex> vertices; // VBO
+    std::vector<unsigned short> indices; // EBO
+
+    // 4. Generate verticies
+    glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < collumns; c++)
+        {
+            // 4.1 Calculate position
+            float x = r * width / (rows - 1);
+            float y = c * length / (collumns - 1);
+            float z = 0;
+
+            glm::vec3 vertexPos = glm::vec3(x, y, z);
+
+            // 4.2 Add vetexes to VBO
+            vertices.emplace_back(vertexPos, normal);
+        }
+    }
+
+    // 6. Calculate triangles
+    // We loop over rows-1 and collumns-1 because for each vertex 'o', we add two triangles as seen in this picture
+    //  o---*   *     // A---B
+    //  | / |         // | / |
+    //  *---*   *     // C---D
+    //
+    //  *   *   *
+    for (int r = 0; r < rows - 1; r++)
+    {
+        for (int c = 0; c < collumns - 1; c++)
+        {
+            // 5.1 Calculate VBO indexes of vertexes 
+            int A = r + rows * c;
+            int B = r + rows * c + 1;
+            int C = r + rows * (c + 1);
+            int D = r + rows * (c + 1) + 1;
+
+            // 5.2 Add tris to the EBO. The front face is determined by counter clockwise winding.
+            // Upper triangle: A C B
+            indices.push_back(A); indices.push_back(C); indices.push_back(B);
+
+            // Lower triangle: B C D
+            indices.push_back(B); indices.push_back(C); indices.push_back(D);
+        }
+    }
+
+    // 7. Create the new model with all the data
+    std::shared_ptr planeMesh = std::make_shared<Mesh>();
+    planeMesh->AddSubmesh<Vertex, unsigned short, VertexFormat::LayoutIterator>(Drawcall::Primitive::Triangles, vertices, indices,
+        vertexFormat.LayoutBegin(static_cast<int>(vertices.size()), true /* interleaved */), vertexFormat.LayoutEnd());
+
+    // 8. Assign model to a model and give it a material.
+    std::shared_ptr<Model> planeModel = std::make_shared<Model>(planeMesh);
+    planeModel->AddMaterial(m_defaultMaterial);
+
+    // 9. Add model to scene
+    m_scene.AddSceneNode(std::make_shared<SceneModel>("Plane", planeModel));
 }
 
 void SandApplication::InitializeFramebuffers()
@@ -436,7 +535,7 @@ std::shared_ptr<Material> SandApplication::CreatePostFXMaterial(const char* frag
     // Create material
     std::shared_ptr<Material> material = std::make_shared<Material>(shaderProgramPtr);
     material->SetUniformValue("SourceTexture", sourceTexture);
-    
+
     return material;
 }
 
@@ -449,14 +548,14 @@ Renderer::UpdateTransformsFunction SandApplication::GetFullscreenTransformFuncti
 
     // Return transform function
     return [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+    {
+        if (cameraChanged)
         {
-            if (cameraChanged)
-            {
-                shaderProgram.SetUniform(invViewMatrixLocation, glm::inverse(camera.GetViewMatrix()));
-                shaderProgram.SetUniform(invProjMatrixLocation, glm::inverse(camera.GetProjectionMatrix()));
-            }
-            shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-        };
+            shaderProgram.SetUniform(invViewMatrixLocation, glm::inverse(camera.GetViewMatrix()));
+            shaderProgram.SetUniform(invProjMatrixLocation, glm::inverse(camera.GetProjectionMatrix()));
+        }
+        shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+    };
 }
 
 void SandApplication::RenderGUI()

@@ -27,7 +27,7 @@ public:
     template<typename T>
     unsigned int AddVertexData(std::span<const T> vertices);
 
-    // Adds a new VBO and initializes it with data
+    // Adds a new EBO and initializes it with data
     template<typename T>
     unsigned int AddElementData(std::span<const T> elements);
 
