@@ -1,4 +1,5 @@
 //Inputs
+//Corresponds directly to the outputs of the previous parts of the fragmentShaderPaths/VertexShaderPaths
 in vec3 ViewNormal;
 in vec3 ViewTangent;
 in vec3 ViewBitangent;

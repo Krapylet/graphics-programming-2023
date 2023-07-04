@@ -212,6 +212,7 @@ void SandApplication::InitializeMaterials()
     // G-buffer material
     {
         // Load and build shader
+        // Shader input and output attributes correspond directly to 
         std::vector<const char*> vertexShaderPaths;
         vertexShaderPaths.push_back("shaders/version330.glsl");
         vertexShaderPaths.push_back("shaders/default.vert");
