@@ -28,8 +28,7 @@
 
 // Includes for manual plane generation.
 #include <ituGL/scene/Transform.h>
-#include <ituGL/geometry/VertexFormat.h>
-#include <ituGL/geometry/Mesh.h>
+
 
 SandApplication::SandApplication()
     : Application(1024, 1024, "Cool Sand shader demo")
@@ -221,7 +220,7 @@ void SandApplication::InitializeMaterials()
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/renderer/flatColor.frag");
+        fragmentShaderPaths.push_back("shaders/flatColor.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -349,89 +348,12 @@ void SandApplication::InitializeModels()
     transform->SetTranslation(transform->GetTranslation() + glm::vec3(1, 1, 1));
     m_scene.AddSceneNode(secondCanon);
 
-    // Generate plane.
-    // 
-    // 1. Define constants
-    float width = 10;
-    float length = 10;
-    int rows = 10;
-    int collumns = 10;
-    int vertexCount = rows * collumns;
-
-    // 2. Define the vertex structure
-    struct Vertex
-    {
-        Vertex() = default;
-        Vertex(const glm::vec3& position, const glm::vec3& normal) : position(position), normal(normal) {}
-        glm::vec3 position;
-        glm::vec3 normal;
-    };
-
-    // 3. Define the vertex format matching vertex structure
-    VertexFormat vertexFormat;
-    vertexFormat.AddVertexAttribute<float>(3);
-    vertexFormat.AddVertexAttribute<float>(3);
-
-    // Initialize VBO and EBO
-    std::vector<Vertex> vertices; // VBO
-    std::vector<unsigned short> indices; // EBO
-
-    // 4. Generate verticies
-    glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    for (int r = 0; r < rows; r++)
-    {
-        for (int c = 0; c < collumns; c++)
-        {
-            // 4.1 Calculate position
-            float x = r * width / (rows - 1);
-            float y = 0;
-            float z = c * length / (collumns - 1);
-
-            glm::vec3 vertexPos = glm::vec3(x, y, z);
-
-            // 4.2 Add vetexes to VBO
-            vertices.emplace_back(vertexPos, normal);
-        }
-    }
-
-    // 6. Calculate triangles
-    // We loop over rows-1 and collumns-1 because for each vertex 'o', we add two triangles as seen in this sketch:
-    //  o---*   *     // A---B
-    //  | / |         // | / |
-    //  *---*   *     // C---D
-    //
-    //  *   *   *
-    for (int r = 0; r < rows - 1; r++)
-    {
-        for (int c = 0; c < collumns - 1; c++)
-        {
-            // 5.1 Calculate VBO indexes of vertexes 
-            int A = r + rows * c;
-            int B = r + rows * c + 1;
-            int C = r + rows * (c + 1);
-            int D = r + rows * (c + 1) + 1;
-
-            // 5.2 Add tris to the EBO. The front face is determined by counter clockwise winding.
-            // Upper triangle: A B C
-            indices.push_back(A); indices.push_back(B); indices.push_back(C);
-
-            // Lower triangle: B D C
-            indices.push_back(B); indices.push_back(D); indices.push_back(C);
-        }
-    }
-
-    // 7. Create the new model with all the data
-    std::shared_ptr planeMesh = std::make_shared<Mesh>();
-    planeMesh->AddSubmesh<Vertex, unsigned short, VertexFormat::LayoutIterator>(Drawcall::Primitive::Triangles, vertices, indices,
-        vertexFormat.LayoutBegin(static_cast<int>(vertices.size()), true /* interleaved */), vertexFormat.LayoutEnd());
-
-    // 8. Assign model to a model and give it a material.
-    std::shared_ptr<Model> planeModel = std::make_shared<Model>(planeMesh);
+    // Generate ground plane
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 10, 10, 10);
     planeModel->AddMaterial(m_flatColorMaterial);
-    m_flatColorMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));
+    m_flatColorMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
 
-    // 9. Add model to scene
+    // plane model to scene
     m_scene.AddSceneNode(std::make_shared<SceneModel>("Plane", planeModel));
 }
 

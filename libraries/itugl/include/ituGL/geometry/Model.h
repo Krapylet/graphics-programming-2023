@@ -36,6 +36,13 @@ public:
     // Draw all the submeshes of the mesh, each one with a material on the list
     void Draw();
 
+    // // Methods for generating primitives
+
+    // Generates a model with a simple plane mesh of size length x width, and with rows x collumns vertexes.
+    // No material is applied to model by default.
+    static std::shared_ptr<Model> GeneratePlane(float length, float width, int rows, int collumns);
+
+
 private:
     // Pointer to the model Mesh
     std::shared_ptr<Mesh> m_mesh;
