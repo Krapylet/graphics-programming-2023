@@ -207,7 +207,46 @@ void SandApplication::InitializeMaterials()
 
         // Create material
         m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        m_defaultMaterial->SetUniformValue("Color", glm::vec3(1.0f));
+    }
+
+    // G-buffer material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/default.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/renderer/flatColor.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+
+        // Create material
+        m_flatColorMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
     }
 
     // Deferred material
@@ -388,7 +427,8 @@ void SandApplication::InitializeModels()
 
     // 8. Assign model to a model and give it a material.
     std::shared_ptr<Model> planeModel = std::make_shared<Model>(planeMesh);
-    planeModel->AddMaterial(m_defaultMaterial);
+    planeModel->AddMaterial(m_flatColorMaterial);
+    m_flatColorMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));
 
     // 9. Add model to scene
     m_scene.AddSceneNode(std::make_shared<SceneModel>("Plane", planeModel));
