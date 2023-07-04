@@ -88,22 +88,32 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
     struct Vertex
     {
         Vertex() = default;
-        Vertex(const glm::vec3& position, const glm::vec3& normal) : position(position), normal(normal) {}
+        Vertex(const glm::vec3& position, const glm::vec3& normal, const glm::vec3& tangent, const glm::vec3& bitangent, const glm::vec2& texCoord)
+            : position(position), normal(normal), tangent(tangent), bitangent(bitangent), texCoord(texCoord) {}
         glm::vec3 position;
         glm::vec3 normal;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
+        glm::vec2 texCoord;  // texture UV coordinate
     };
 
     // 3. Define the vertex format matching vertex structure
     VertexFormat vertexFormat;
     vertexFormat.AddVertexAttribute<float>(3);
     vertexFormat.AddVertexAttribute<float>(3);
+    vertexFormat.AddVertexAttribute<float>(3);
+    vertexFormat.AddVertexAttribute<float>(3);
+    vertexFormat.AddVertexAttribute<float>(2);
 
     // Initialize VBO and EBO
     std::vector<Vertex> vertices; // VBO
     std::vector<unsigned short> indices; // EBO
 
     // 4. Generate verticies
+    // Since its just a plane, normal, tangent and bitangent becomes super easy to calculate
     glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 bitangent = glm::vec3(0.0f, 0.0f, 1.0f);
 
     for (int r = 0; r < rows; r++)
     {
@@ -116,8 +126,13 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
 
-            // 4.2 Add vetexes to VBO
-            vertices.emplace_back(vertexPos, normal);
+            // 4.2 calulate texture coordinate (UV). Both are clamped betwen 0-1
+            float u = x / width;  
+            float v = z / length; 
+            glm::vec2 texCoord = glm::vec2(u, v);
+
+            // 4.3 Add vetexes to VBO
+            vertices.emplace_back(vertexPos, normal, tangent, bitangent, texCoord);
         }
     }
 

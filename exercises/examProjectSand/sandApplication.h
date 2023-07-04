@@ -62,6 +62,7 @@ private:
     std::shared_ptr<Material> m_defaultMaterial;
     std::shared_ptr<Material> m_deferredMaterial;
     std::shared_ptr<Material> m_flatColorMaterial;
+    std::shared_ptr<Material> m_desertSandMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
     std::shared_ptr<Material> m_bloomMaterial;
@@ -78,6 +79,7 @@ private:
     float m_contrast;
     float m_hueShift;
     float m_saturation;
+    float m_sampleDistance;
     glm::vec3 m_colorFilter;
     int m_blurIterations;
     glm::vec2 m_bloomRange;

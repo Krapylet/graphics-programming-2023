@@ -42,12 +42,17 @@ SandApplication::SandApplication()
     , m_blurIterations(1)
     , m_bloomRange(1.0f, 2.0f)
     , m_bloomIntensity(1.0f)
+    , m_sampleDistance(0.01f)
 {
 }
 
 void SandApplication::Initialize()
 {
     Application::Initialize();
+
+    // line enables wireframe view. Used for debugging.
+    //GetDevice().SetWireframeEnabled(true);
+    
 
     // Initialize DearImGUI
     // Commonly used open source UI framework. The one used in CSG and the like.
@@ -208,7 +213,57 @@ void SandApplication::InitializeMaterials()
         m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
     }
 
-    // G-buffer material
+    // Sand material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/desertSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/desertSand.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+
+        // Create material
+        m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        // Set material uniforms
+        
+        // Color
+        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
+
+        // Depth map                  // I don't think we'll get any benefits from mipmaps on the depth texture?
+        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMap.jpg", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F, true);
+        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", 1.0f);
+    }
+
+    // Flat color material
     {
         // Load and build shader
         // Shader input and output attributes correspond directly to 
@@ -350,9 +405,8 @@ void SandApplication::InitializeModels()
 
     // Generate ground plane
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 10, 10, 10);
-    planeModel->AddMaterial(m_flatColorMaterial);
-    m_flatColorMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
-
+    planeModel->AddMaterial(m_desertSandMaterial);
+   
     // plane model to scene
     m_scene.AddSceneNode(std::make_shared<SceneModel>("Plane", planeModel));
 }
@@ -531,6 +585,15 @@ void SandApplication::RenderGUI()
 
     // Draw GUI for camera controller
     m_cameraController.DrawGUI(m_imGui);
+
+    if (auto window = m_imGui.UseWindow("Shader Uniforms"))
+    {
+        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.0f, 0.0001f, 0.01f))
+        {
+            m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        }
+    }
+    
 
     if (auto window = m_imGui.UseWindow("Post FX"))
     {
