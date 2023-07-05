@@ -55,32 +55,33 @@ void main()
 
 
 	// -------- Normal and tangents ---------
-	float sampleDist = SampleDistance; // This could be made into a uniform.
-
 	// We have to update the normals since we just modified the curvature of the plane.
 	// We find a simplified tangent by sampling two points on either side of the vertex on a cardinal axis,
 	// And use that as the start/end of the tangent.
-	vec4 tangentStart = texture(DepthMap, VertexTexCoord + vec2(-1,0) * sampleDist);
-	vec4 tangentEnd = texture(DepthMap, VertexTexCoord + vec2(1,0) * sampleDist);
-	float tangentDiff = tangentEnd.x - tangentStart.x;
-	vec3 tangent = normalize(vec3(1, tangentEnd.x - tangentStart.x , 0));
+	vec4 tangentStart = texture(DepthMap, VertexTexCoord + vec2(-1,0) * SampleDistance);
+	vec4 tangentEnd = texture(DepthMap, VertexTexCoord + vec2(1,0) * SampleDistance);
+	float tangentDiff = (tangentEnd.x - tangentStart.x) / (SampleDistance * 2);
+	vec3 tangent = normalize(vec3(SampleDistance, tangentDiff, 0));
 	
 	// Calculate the bitangent the same way
-	vec4 bitangentStart = texture(DepthMap, VertexTexCoord + vec2(0,1) * sampleDist);
-	vec4 bitangentEnd = texture(DepthMap, VertexTexCoord + vec2(0,-1) * sampleDist);
-	vec3 bitangent = normalize(vec3(0, bitangentEnd.x - bitangentStart.x, 1));
+	vec4 bitangentStart = texture(DepthMap, VertexTexCoord + vec2(0,-1) * SampleDistance);
+	vec4 bitangentEnd = texture(DepthMap, VertexTexCoord + vec2(0,1) * SampleDistance);
+	float bitangentDiff = (bitangentEnd.x - bitangentStart.x) / (SampleDistance * 2);
+	vec3 bitangent = normalize(vec3(0, bitangentEnd.x - bitangentStart.x, SampleDistance));
 
 	// Now we can calucalte the new normal as the cross product of the tangent and bitangent
 	vec3 normal = cross(tangent, bitangent);
 
 	// normal in view space (for lighting computation)
-	ViewNormal = vec3(TexCoord.x, 1, TexCoord.y);  //(WorldViewMatrix * vec4(normal, 0.0)).xyz;
+	//ViewNormal = vec3(TexCoord.x, 1, TexCoord.y);  //(WorldViewMatrix * vec4(normal, 0.0)).xyz;
+
+	ViewNormal = normalize(vec3(tangentDiff, SampleDistance, bitangentDiff));
 
 	// tangent in view space (for lighting computation)
-	ViewTangent = tangent; //(WorldViewMatrix * vec4(tangent, 0.0)).xyz;
+	ViewTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
 
 	// bitangent in view space (for lighting computation)
-	ViewBitangent = bitangent; //(WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
+	ViewBitangent = (WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
 
 	// DEBUG STUFF
 	vec3 vertexOffset = vec3(0, vertexOffsetIntensity, 0);

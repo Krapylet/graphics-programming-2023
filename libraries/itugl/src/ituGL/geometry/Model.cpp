@@ -119,39 +119,21 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
     {
         for (int c = 0; c < collumns; c++)
         {
-            glm::vec3 tangent = glm::vec3(0.0f, 0.0f, 1.0f);
-            glm::vec3 bitangent;
-
-            float y;
-
-            //Upwards slope
-            if (r < rows / 2) {
-                bitangent = glm::normalize(glm::vec3(1.0f, 0.1f, 0.0f));
-                y = r * 0.1f;
-            }
-            // hill top
-            else if (r == rows / 2) {
-                bitangent = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
-                y = r * 0.1f;
-            }
-            // Downwards slope
-            else if (r > rows / 2) {
-                bitangent = glm::normalize(glm::vec3(1.0f, -0.1f, 0.0f));
-                y = 0.1f * rows / 2 - (r - rows/2) * 0.1f;
-            }
-
+            glm::vec3 tangent = glm::vec3(0, 0, 1);
+            glm::vec3 bitangent = glm::vec3(1, 0, 0);
             glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
 
             // 4.1 Calculate position
             float x = r * length / (rows - 1);
+            float y = 0;
             float z = c * width / (collumns - 1);
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
 
             // 4.2 calulate texture coordinate (UV). Both are clamped betwen 0-1
             // For some reason, sampling near the edges becomes a problem. It seems to be a promlem with the loader? The image gets compressed quite a bit.
-            float u = x / length;// *0.99 + length * 0.005;
-            float v = z / width;// *0.99 + length * 0.005;
+            float u = x / length;
+            float v = z / width;
             glm::vec2 texCoord = glm::vec2(u, v);
 
             // 4.3 Add vetexes to VBO

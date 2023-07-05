@@ -89,7 +89,7 @@ void SandApplication::Render()
     m_renderer.Render();
     
     // Debug output to check the shadow map
-    m_desertSandMaterial->SetUniformValue("ColorTexture", m_mainLight->GetShadowMap());
+    //m_desertSandMaterial->SetUniformValue("ColorTexture", m_mainLight->GetShadowMap());
 
     // Render the debug user interface
     RenderGUI();
@@ -223,13 +223,13 @@ void SandApplication::InitializeMaterials()
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
         vertexShaderPaths.push_back("shaders/version330.glsl");
-        vertexShaderPaths.push_back("shaders/default.vert");
+        vertexShaderPaths.push_back("shaders/desertSand.vert");
         Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
 
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/default.frag");
+        fragmentShaderPaths.push_back("shaders/desertSand.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -263,7 +263,7 @@ void SandApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
 
         // Albedo map
@@ -406,8 +406,8 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+    //std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    //m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     // add second canon to test whether it can be moved
     //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
@@ -416,7 +416,7 @@ void SandApplication::InitializeModels()
     //m_scene.AddSceneNode(secondCanon);
 
     // Generate ground plane
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 11, 11);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 100, 300);
     planeModel->AddMaterial(m_desertSandMaterial);
    
     // plane model to scene

@@ -17,18 +17,27 @@ uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
 
 void main()
-{
-	//vec3 debugVector = ViewTangent;
-
-
-	// 1 stays 1, 0 becomes 0.5, -1 becomes 0. 
-	//vec3 absoluteNormalizedVector = (debugVector + vec3(1,1,1))/2;
-	//vec3 componentVector = vec3(absoluteNormalizedVector.y, 0, 0);
+{	
 	
-	vec4 colorSample = texture(ColorTexture, TexCoord);
-	FragAlbedo = colorSample;
 
-	FragNormal = vec2(0.5f,0.5f);
+
+	// --------- Convert normals to worldspace ------------
+
+	// Create tangent space matrix
+	mat3 tangentMatrix = mat3(ViewTangent, ViewBitangent, ViewNormal);
+
+	vec2 normal = normalize(vec2(1,1));
+	float z = sqrt(max(1.0f - normal.x * normal.x - normal.y * normal.y, 0.0f));
+	vec3 normalTangentSpace = vec3(normal, z);
+
+	// Return matrix in world space
+	vec2 worldSpaceNormal = normalize(tangentMatrix * normalTangentSpace).xy;
+
+	FragNormal = vec2(0.5,0.5);
+
+	//FragAlbedo = vec4(worldSpaceNormal, 0, 1); //vec4(texture(ColorTexture, TexCoord).rgb, 1);
+
+	FragAlbedo = vec4(ViewNormal, 1);
 
 	FragOthers = vec4(1,1,1,1);
 }
