@@ -260,7 +260,7 @@ void SandApplication::InitializeMaterials()
         // Set material uniforms
         
         // Color
-        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
+        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
         std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
@@ -366,12 +366,14 @@ void SandApplication::InitializeMaterials()
 
         // Create material
         m_deferredMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        m_deferredMaterial->SetUniformValue("FadeColor", glm::vec3(0.42f, 0.32f, 0.09f));  // Sand Sky color
     }
 }
 
 void SandApplication::InitializeModels()
 {
-    m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/yoga_studio.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
+    m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/DesertSkybox.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
 
     m_skyboxTexture->Bind();
     float maxLod;
@@ -422,15 +424,6 @@ void SandApplication::InitializeModels()
     // plane model to scene
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
-
-    //add second plane
-    planeModel = Model::GeneratePlane(10, 10, 3, 3);
-    planeModel->AddMaterial(m_desertSandMaterial);
-
-    // plane model to scene
-    plane = std::make_shared<SceneModel>("Plane2", planeModel);
-    m_scene.AddSceneNode(plane);
-    plane->GetTransform()->SetTranslation(glm::vec3(-5, -1, -5));
 }
 
 void SandApplication::InitializeFramebuffers()
@@ -611,7 +604,7 @@ void SandApplication::RenderGUI()
 
     if (auto window = m_imGui.UseWindow("Shader Uniforms"))
     {
-        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 1.0f))
+        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 0.1f))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }

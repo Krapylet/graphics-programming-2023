@@ -12,6 +12,8 @@ uniform sampler2D OthersTexture;
 uniform mat4 InvViewMatrix;
 uniform mat4 InvProjMatrix;
 
+uniform vec3 FadeColor;
+
 void main()
 {
 	// Extract information from g-buffers
@@ -38,5 +40,18 @@ void main()
 
 	// Compute lighting
 	vec3 lighting = ComputeLighting(position, data, viewDir, true);
-	FragColor = vec4(lighting, 1.0f);
+
+	// Add dust fade to final color after lighting
+	// Camera Clipping planes
+	float near = 0.1;
+	float far  = 100.0; 
+
+	// nonlinear depth
+	float depth = gl_FragCoord.z;
+	float ndc = depth * 2.0 - 1.0; 
+	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));	
+
+	
+	vec3 fadedLight = mix(lighting, FadeColor, linearDepth);
+	FragColor = vec4(fadedLight, 1.0f);
 }

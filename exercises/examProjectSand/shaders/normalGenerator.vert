@@ -79,5 +79,4 @@ void main()
 	ViewNormal = normal;
 	ViewTangent = tangent;
 	ViewBitangent = bitangent;
-	
 }
