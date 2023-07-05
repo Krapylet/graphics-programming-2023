@@ -47,11 +47,18 @@ void main()
 	float far  = 100.0; 
 
 	// nonlinear depth
-	float depth = gl_FragCoord.z;
+	float depth = texture(DepthTexture, TexCoord).r;;
 	float ndc = depth * 2.0 - 1.0; 
-	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));	
+	float linearDepth = ndc/10; //(2.0 * near * far) / (far + near - ndc * (far - near));
+	// Now that we have the linear depth, we can then transform it to a gradual easing
+	//linearDepth *= linearDepth;
 
-	
+	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
+	linearDepth -= 0.1f;
+	linearDepth = max(0, linearDepth);
+
+		
 	vec3 fadedLight = mix(lighting, FadeColor, linearDepth);
+
 	FragColor = vec4(fadedLight, 1.0f);
 }

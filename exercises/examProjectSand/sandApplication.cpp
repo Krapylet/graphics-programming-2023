@@ -418,7 +418,7 @@ void SandApplication::InitializeModels()
     //m_scene.AddSceneNode(secondCanon);
 
     // Generate ground plane
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 100, 300);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 30, 100, 300);
     planeModel->AddMaterial(m_desertSandMaterial);
    
     // plane model to scene

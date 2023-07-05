@@ -58,7 +58,7 @@ void main()
 	float vertexOffsetIntensity = (1 - depthSample) * OffsetStrength;
 	
 	// Apply offset exclusivly on the view y axis. This is a bit hacky, and should probably be done in modelspace instead of view space so that we can rotate the model.
-	vec3 vertexOffset = vec3(0, vertexOffsetIntensity, 0);
+	vec3 vertexOffset = vec3(0, (cos(3.14f * vertexOffsetIntensity) - 1) / 2, 0);
 
 	// final vertex position (for opengl rendering, not for lighting)
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffset, 1.0);
