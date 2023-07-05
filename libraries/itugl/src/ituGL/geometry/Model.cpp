@@ -111,17 +111,39 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
 
     // 4. Generate verticies
     // Since its just a plane, normal, tangent and bitangent becomes super easy to calculate
-    glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 tangent = glm::vec3(1.0f, 0.0f, 0.0f);
-    glm::vec3 bitangent = glm::vec3(0.0f, 0.0f, 1.0f);
+    //glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    //glm::vec3 tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+    //glm::vec3 bitangent = glm::vec3(0.0f, 0.0f, 1.0f);
 
     for (int r = 0; r < rows; r++)
     {
         for (int c = 0; c < collumns; c++)
         {
+            glm::vec3 tangent = glm::vec3(0.0f, 0.0f, 1.0f);
+            glm::vec3 bitangent;
+
+            float y;
+
+            //Upwards slope
+            if (r < rows / 2) {
+                bitangent = glm::normalize(glm::vec3(1.0f, 0.1f, 0.0f));
+                y = r * 0.1f;
+            }
+            // hill top
+            else if (r == rows / 2) {
+                bitangent = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
+                y = r * 0.1f;
+            }
+            // Downwards slope
+            else if (r > rows / 2) {
+                bitangent = glm::normalize(glm::vec3(1.0f, -0.1f, 0.0f));
+                y = 0.1f * rows / 2 - (r - rows/2) * 0.1f;
+            }
+
+            glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
+
             // 4.1 Calculate position
             float x = r * length / (rows - 1);
-            float y = 0;
             float z = c * width / (collumns - 1);
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);

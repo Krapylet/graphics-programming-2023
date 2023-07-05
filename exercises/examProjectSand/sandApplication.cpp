@@ -87,6 +87,9 @@ void SandApplication::Render()
 
     // Render the scene
     m_renderer.Render();
+    
+    // Debug output to check the shadow map
+    m_desertSandMaterial->SetUniformValue("ColorTexture", m_mainLight->GetShadowMap());
 
     // Render the debug user interface
     RenderGUI();
@@ -170,7 +173,9 @@ void SandApplication::InitializeMaterials()
 
         // Create material
         m_shadowMapMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        m_shadowMapMaterial->SetCullMode(Material::CullMode::Front);
+        
+        // We get an error if cull is set to None, and front won't let planes cast shadows.
+        m_shadowMapMaterial->SetCullMode(Material::CullMode::Back);
     }
 
     // G-buffer material
@@ -218,13 +223,13 @@ void SandApplication::InitializeMaterials()
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
         vertexShaderPaths.push_back("shaders/version330.glsl");
-        vertexShaderPaths.push_back("shaders/desertSand.vert");
+        vertexShaderPaths.push_back("shaders/default.vert");
         Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
 
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/desertSand.frag");
+        fragmentShaderPaths.push_back("shaders/default.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -401,8 +406,8 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    //std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    //m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     // add second canon to test whether it can be moved
     //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
@@ -411,11 +416,21 @@ void SandApplication::InitializeModels()
     //m_scene.AddSceneNode(secondCanon);
 
     // Generate ground plane
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 100, 300);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 11, 11);
     planeModel->AddMaterial(m_desertSandMaterial);
    
     // plane model to scene
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("Plane", planeModel));
+    std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
+    m_scene.AddSceneNode(plane);
+
+    //add second plane
+    planeModel = Model::GeneratePlane(10, 10, 3, 3);
+    planeModel->AddMaterial(m_desertSandMaterial);
+
+    // plane model to scene
+    plane = std::make_shared<SceneModel>("Plane2", planeModel);
+    m_scene.AddSceneNode(plane);
+    plane->GetTransform()->SetTranslation(glm::vec3(-5, -1, -5));
 }
 
 void SandApplication::InitializeFramebuffers()
@@ -466,6 +481,7 @@ void SandApplication::InitializeRenderer()
     // Add shadow map pass
     if (m_mainLight)
     {
+
         if (!m_mainLight->GetShadowMap())
         {
             m_mainLight->CreateShadowMap(glm::vec2(512, 512));
