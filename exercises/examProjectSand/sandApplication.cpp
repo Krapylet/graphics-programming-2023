@@ -257,10 +257,17 @@ void SandApplication::InitializeMaterials()
         // Color
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.66f, 0.4f, 0.23f));  // Sandy color
 
-        // Depth map                  // I don't think we'll get any benefits from mipmaps on the depth texture?
-        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMap.jpg", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F, true);
+        // Depth map. Since it's black and white, there's no reason to load more than one channel.
+        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
-        m_desertSandMaterial->SetUniformValue("OffsetStrength", 1.0f);
+
+        // Albedo map
+        m_desertSandMaterial->SetUniformValue("ColorTexture", displacementMap);
+        
+        // Initial depth parameters
+        m_desertSandMaterial->SetUniformValue("SampleDistance", 0.05f);
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.15f);
+        
     }
 
     // Flat color material
@@ -394,17 +401,17 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+    //std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    //m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     // add second canon to test whether it can be moved
-    std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
-    std::shared_ptr<Transform> transform = secondCanon->GetTransform();
-    transform->SetTranslation(transform->GetTranslation() + glm::vec3(1, 1, 1));
-    m_scene.AddSceneNode(secondCanon);
+    //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
+    //std::shared_ptr<Transform> transform = secondCanon->GetTransform();
+    //transform->SetTranslation(transform->GetTranslation() + glm::vec3(1, 1, 1));
+    //m_scene.AddSceneNode(secondCanon);
 
     // Generate ground plane
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 10, 10, 10);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1, 3, 100, 300);
     planeModel->AddMaterial(m_desertSandMaterial);
    
     // plane model to scene
@@ -588,9 +595,14 @@ void SandApplication::RenderGUI()
 
     if (auto window = m_imGui.UseWindow("Shader Uniforms"))
     {
-        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.0f, 0.0001f, 0.01f))
+        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 1.0f))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        }
+
+        if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.01f, 2.0f))
+        {
+            m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
         }
     }
     

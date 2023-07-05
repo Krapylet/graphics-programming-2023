@@ -16,13 +16,18 @@ public:
     // Helper to easily load a shared texture
     static std::shared_ptr<Texture2DObject> LoadTextureShared(const char* path,
         TextureObject::Format format, TextureObject::InternalFormat internalFormat,
-        bool generateMipmap = true, bool flipVertical = false);
+        bool generateMipmap = true, bool flipVertical = false, bool wrapping = true);
 
     inline bool GetFlipVertical() const { return m_flipVertical; }
     inline void SetFlipVertical(bool flipVertical) { m_flipVertical = flipVertical; }
+    inline bool GetWrapping() const { return m_wrap; }
+    inline void SetWrapping(bool wrap) { m_wrap = wrap; }
 
 private:
     // If true, the texture will be flipped vertically on load
     // This option exists because some systems define the vertical origin as "up", and others as "down"
     bool m_flipVertical;
+
+    // If textures aren't supposed to wrap, we need to set some additional import flags.
+    bool m_wrap;
 };

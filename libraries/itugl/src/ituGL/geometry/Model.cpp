@@ -120,15 +120,16 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
         for (int c = 0; c < collumns; c++)
         {
             // 4.1 Calculate position
-            float x = r * width / (rows - 1);
+            float x = r * length / (rows - 1);
             float y = 0;
-            float z = c * length / (collumns - 1);
+            float z = c * width / (collumns - 1);
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
 
             // 4.2 calulate texture coordinate (UV). Both are clamped betwen 0-1
-            float u = x / width;  
-            float v = z / length; 
+            // For some reason, sampling near the edges becomes a problem. It seems to be a promlem with the loader? The image gets compressed quite a bit.
+            float u = x / length;// *0.99 + length * 0.005;
+            float v = z / width;// *0.99 + length * 0.005;
             glm::vec2 texCoord = glm::vec2(u, v);
 
             // 4.3 Add vetexes to VBO
@@ -143,15 +144,15 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
     //  *---*   *     // C---D
     //
     //  *   *   *
-    for (int r = 0; r < rows - 1; r++)
+    for (int c = 0; c < collumns - 1; c++)
     {
-        for (int c = 0; c < collumns - 1; c++)
+        for (int r = 0; r < rows - 1; r++)
         {
             // 5.1 Calculate VBO indexes of vertexes 
-            int A = r + rows * c;
-            int B = r + rows * c + 1;
-            int C = r + rows * (c + 1);
-            int D = r + rows * (c + 1) + 1;
+            int A = c + collumns * r;
+            int B = c + collumns * r + 1;
+            int C = c + collumns * (r + 1);
+            int D = c + collumns * (r + 1) + 1;
 
             // 5.2 Add tris to the EBO. The front face is determined by counter clockwise winding.
             // Upper triangle: A B C

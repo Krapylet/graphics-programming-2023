@@ -13,6 +13,7 @@ Texture2DLoader::Texture2DLoader(TextureObject::Format format, TextureObject::In
 {
 }
 
+
 Texture2DObject Texture2DLoader::Load(const char* path)
 {
     Texture2DObject texture2D;
@@ -31,6 +32,17 @@ Texture2DObject Texture2DLoader::Load(const char* path)
 
         texture2D.SetParameter(TextureObject::ParameterEnum::MinFilter, GL_LINEAR);
         texture2D.SetParameter(TextureObject::ParameterEnum::MagFilter, GL_LINEAR);
+
+        // --------------------
+        // THIS IS THE SOLUTION
+        // --------------------
+        // If the Texture Isn't supposed to wrap, then we need to clamp to edge so that
+        // the color on the opposite edge doesn't bleed over.
+        if (!m_wrap) {
+            texture2D.SetParameter(TextureObject::ParameterEnum::WrapR, GL_CLAMP_TO_EDGE);
+            texture2D.SetParameter(TextureObject::ParameterEnum::WrapS, GL_CLAMP_TO_EDGE);
+            texture2D.SetParameter(TextureObject::ParameterEnum::WrapT, GL_CLAMP_TO_EDGE);
+        }
 
         // Generate mipmap if needed
         if (m_generateMipmap)
@@ -53,10 +65,11 @@ Texture2DObject Texture2DLoader::Load(const char* path)
 }
 
 std::shared_ptr<Texture2DObject> Texture2DLoader::LoadTextureShared(const char* path,
-    TextureObject::Format format, TextureObject::InternalFormat internalFormat, bool generateMipmap, bool flipVertical)
+    TextureObject::Format format, TextureObject::InternalFormat internalFormat, bool generateMipmap, bool flipVertical, bool wrapping)
 {
     Texture2DLoader loader(format, internalFormat);
     loader.SetGenerateMipmap(generateMipmap);
     loader.SetFlipVertical(flipVertical);
+    loader.SetWrapping(wrapping);
     return loader.LoadShared(path);
 }

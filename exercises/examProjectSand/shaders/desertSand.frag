@@ -18,14 +18,15 @@ uniform sampler2D SpecularTexture;
 
 void main()
 {
-	vec3 debugVector = ViewTangent;
+	//vec3 debugVector = ViewTangent;
 
 
 	// 1 stays 1, 0 becomes 0.5, -1 becomes 0. 
-	vec3 absoluteNormalizedVector = (debugVector + vec3(1,1,1))/2;
-	vec3 componentVector = vec3(absoluteNormalizedVector.y, 0, 0);
-
-	FragAlbedo = vec4(componentVector, 1);
+	//vec3 absoluteNormalizedVector = (debugVector + vec3(1,1,1))/2;
+	//vec3 componentVector = vec3(absoluteNormalizedVector.y, 0, 0);
+	
+	vec4 colorSample = texture(ColorTexture, TexCoord);
+	FragAlbedo = colorSample;
 
 	FragNormal = vec2(0.5f,0.5f);
 

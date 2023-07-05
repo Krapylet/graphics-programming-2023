@@ -30,11 +30,23 @@ void main()
 
 	// ------- Vertex position --------
 	// Sample depth texture
-	vec4 depthSample = texture(DepthMap, VertexTexCoord);
+	// We take a couple of extra samples in each direction to smooth out any extreme pixels.
+	vec4 depthSampleCenter = texture(DepthMap, VertexTexCoord);
+	vec4 depthSampleNorth = texture(DepthMap, VertexTexCoord + vec2(1,0) * SampleDistance);
+	vec4 depthSampleSouth = texture(DepthMap, VertexTexCoord + vec2(-1,0) * SampleDistance);
+	vec4 depthSampleEast = texture(DepthMap, VertexTexCoord + vec2(0,1) * SampleDistance);
+	vec4 depthSampleWest = texture(DepthMap, VertexTexCoord + vec2(0,-1) * SampleDistance);
+	
+	// Since the depth map is black and white, we only need to look at the red value.
+	float depthSample = (depthSampleCenter.r + depthSampleNorth.r + depthSampleSouth.r + depthSampleEast.r + depthSampleWest.r)/5;
 
-	// Since the depth map is blacka and white, each rgb value is the same. We therefore only need one.
-	float vertexOffsetIntensity = depthSample.x * OffsetStrength;
+	// square to create a better depth distribution.
+	depthSample = depthSample * depthSample;
 
+	// We also invert so that darker values are lower to the ground.
+	float vertexOffsetIntensity = (1 - depthSample) * OffsetStrength;
+	
+ 
 	// Apply offset exclusivly on the view y axis. This is a bit hacky, and should probably be done in modelspace instead of view space so that we can rotate the model.
 	//vec3 vertexOffset = vec3(0, vertexOffsetIntensity, 0);
 
@@ -62,7 +74,7 @@ void main()
 	vec3 normal = cross(tangent, bitangent);
 
 	// normal in view space (for lighting computation)
-	ViewNormal = normal;  //(WorldViewMatrix * vec4(normal, 0.0)).xyz;
+	ViewNormal = vec3(TexCoord.x, 1, TexCoord.y);  //(WorldViewMatrix * vec4(normal, 0.0)).xyz;
 
 	// tangent in view space (for lighting computation)
 	ViewTangent = tangent; //(WorldViewMatrix * vec4(tangent, 0.0)).xyz;
