@@ -75,6 +75,14 @@ void main()
 	vec3 bitangent = GetTangentFromSample(vec2(1, -1), vec2(-1, 1));
 	vec3 normal = normalize(cross(tangent, bitangent));
 
+	// --------- Mix depth map and normal map --------
+	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
+	// Use a mix and a universal property float to set the how controlling each of them are.
+
+	// translated into world space?
+	vec3 mapNormal = texture(NormalMap, VertexTexCoord).rgb;
+
+
 	// Convert normal and tangents to view space
 	vec3 worldTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
 	vec3 worldBitantent = (WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
@@ -85,13 +93,7 @@ void main()
 	ViewNormal = worldNormal;
 
 
-	// --------- Mix depth map and normal map --------
-	// We need to do this here, since the deferred shaders run for every object, and we only want the sand to be wavy
-	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
-	// Use a mix and a universal property float to set the how controlling each of them are.
-
-	// translated into world space?
-	//vec3 mapNormal = SampleNormalMap(NormalMap, VertexTexCoord, normal, tangent, bitangent);
+	
 
 	
 
