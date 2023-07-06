@@ -266,8 +266,16 @@ void SandApplication::InitializeMaterials()
         std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
 
+        // Normal map. Combines with the depth map to show the small ripples on the sand.
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F, true, false);
+        m_desertSandMaterial->SetUniformValue("NormalMap", normalMap);
+
+
         // Albedo map
+        // Not currently used. Flat colors and normals does plenty by themselves.
         m_desertSandMaterial->SetUniformValue("ColorTexture", displacementMap);
+
+
         
         // Initial depth parameters
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.05f);

@@ -17,9 +17,9 @@ uniform mat4 WorldViewProjMatrix;
 uniform float OffsetStrength;
 uniform float SampleDistance;
 uniform sampler2D DepthMap;
+uniform sampler2D NormalMap; // Additional normal map for providing small waves on the bigger dunes.
 
 // Not yet used
-uniform sampler2D NormalMap; // Additional normal map for providing small waves on the bigger dunes.
 uniform sampler2D NoiseMap; // Pr pixel noise for the light intensity
 
 vec3 GetTangentFromSample(vec2 startDirection, vec2 endDirection)
@@ -69,14 +69,30 @@ void main()
 	//For each fragment, to calculate the normal direction, we sample four points in an x to create
 	//A tangent and bitangent for the vector. We can then calculate the normal as the crossproduct between the two.	
 
+	// I'm pretty sure these are all in model/tangent space?
+	// And that we need to compute the Tangent->world transformation matrix to make the light hit them from any angle?
 	vec3 tangent = GetTangentFromSample(vec2(-1, -1), vec2(1, 1));
 	vec3 bitangent = GetTangentFromSample(vec2(1, -1), vec2(-1, 1));
 	vec3 normal = normalize(cross(tangent, bitangent));
 
-	// These are all in TangentSpace?
-	// And we need to compute the Tangent->world transformation matrix?
+	// Convert normal and tangents to view space
+	vec3 worldTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
+	vec3 worldBitantent = (WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
+	vec3 worldNormal = (WorldViewMatrix * vec4(normal, 0.0)).xyz;
 
-	ViewNormal = normal;
-	ViewTangent = tangent;
-	ViewBitangent = bitangent;
+	ViewTangent = worldTangent;
+	ViewBitangent = worldBitantent;
+	ViewNormal = worldNormal;
+
+
+	// --------- Mix depth map and normal map --------
+	// We need to do this here, since the deferred shaders run for every object, and we only want the sand to be wavy
+	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
+	// Use a mix and a universal property float to set the how controlling each of them are.
+
+	// translated into world space?
+	//vec3 mapNormal = SampleNormalMap(NormalMap, VertexTexCoord, normal, tangent, bitangent);
+
+	
+
 }
