@@ -18,7 +18,7 @@ void DeferredRenderPass::Render()
 {
     Renderer& renderer = GetRenderer();
 
-    renderer.GetDevice().Clear(true, Color(0.0f, 0.0f, 0.0f, 1.0f), false, 1.0f);
+    renderer.GetDevice().DisableFeature(GL_DEPTH_TEST);
 
     const Camera& camera = renderer.GetCurrentCamera();
 
