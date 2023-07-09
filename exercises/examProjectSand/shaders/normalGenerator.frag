@@ -1,14 +1,14 @@
 //Inputs
 //Corresponds directly to the outputs of the previous parts of the fragmentShaderPaths/VertexShaderPaths
-in vec3 ViewNormal;
-in vec3 ViewTangent;
-in vec3 ViewBitangent;
-in vec2 TexCoord;
+layout (location = 0) in vec3 ViewNormal;
+layout (location = 1) in vec3 ViewTangent;
+layout (location = 2) in vec3 ViewBitangent;
+layout (location = 3) in vec2 TexCoord;
 
 //Outputs
-out vec4 FragAlbedo;
-out vec2 FragNormal;
-out vec4 FragOthers;
+layout (location = 0) out vec4 FragAlbedo;
+layout (location = 1) out vec2 FragNormal;
+layout (location = 2) out vec4 FragOthers;
 
 //Uniforms
 uniform vec3 Color;

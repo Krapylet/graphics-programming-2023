@@ -49,16 +49,16 @@ void main()
 	// nonlinear depth
 	float depth = texture(DepthTexture, TexCoord).r;;
 	float ndc = depth * 2.0 - 1.0; 
-	float linearDepth = ndc/10; //(2.0 * near * far) / (far + near - ndc * (far - near));
+	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));
 	// Now that we have the linear depth, we can then transform it to a gradual easing
-	//linearDepth *= linearDepth;
+	float powerDepth = linearDepth * linearDepth;
 
 	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
-	linearDepth -= 0.1f;
-	linearDepth = max(0, linearDepth);
+	//powerDepth -= 0.1f;
+	//powerDepth = max(0, powerDepth);
 
 		
-	vec3 fadedLight = mix(lighting, FadeColor, linearDepth);
+	vec3 fadedLight = mix(lighting, FadeColor, powerDepth);
 
 	FragColor = vec4(fadedLight, 1.0f);
 }
