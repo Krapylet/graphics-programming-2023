@@ -81,6 +81,7 @@ private:
     float m_saturation;
     float m_sampleDistance = 0.1f;
     float m_offsetStength = 1;
+    float m_enableFog = 1;
     glm::vec3 m_colorFilter;
     int m_blurIterations;
     glm::vec2 m_bloomRange;

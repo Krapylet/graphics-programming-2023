@@ -13,6 +13,7 @@ uniform mat4 InvViewMatrix;
 uniform mat4 InvProjMatrix;
 
 uniform vec3 FadeColor;
+uniform float EnableFog;
 
 void main()
 {
@@ -54,11 +55,12 @@ void main()
 	float powerDepth = linearDepth * linearDepth;
 
 	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
-	//powerDepth -= 0.1f;
-	//powerDepth = max(0, powerDepth);
+	powerDepth -= 0.1f;
+	powerDepth = max(0, powerDepth);
 
-		
-	vec3 fadedLight = mix(lighting, FadeColor, powerDepth);
+	
+	// Add uniform bool/int multiplied to powerDepth to enable/disable fog during playtest.
+	vec3 fadedLight = mix(lighting, FadeColor, powerDepth * EnableFog);
 
 	FragColor = vec4(fadedLight, 1.0f);
 }

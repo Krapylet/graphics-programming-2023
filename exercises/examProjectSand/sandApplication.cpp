@@ -376,6 +376,7 @@ void SandApplication::InitializeMaterials()
         m_deferredMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
 
         m_deferredMaterial->SetUniformValue("FadeColor", glm::vec3(0.42f, 0.32f, 0.09f));  // Sand Sky color
+        m_deferredMaterial->SetUniformValue("EnableFog", m_enableFog);
     }
 }
 
@@ -620,6 +621,10 @@ void SandApplication::RenderGUI()
         if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.01f, 2.0f))
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+        }
+
+        if (ImGui::DragFloat("EnableFog", &m_enableFog, 1, 0, 1)) {
+            m_deferredMaterial->SetUniformValue("EnableFog", m_enableFog);
         }
     }
     
