@@ -623,7 +623,7 @@ void SandApplication::RenderGUI()
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
         }
 
-        if (ImGui::DragFloat("EnableFog", &m_enableFog, 1, 0, 1)) {
+        if (ImGui::DragFloat("EnableFog", &m_enableFog, 0.1f, 0, 1)) {
             m_deferredMaterial->SetUniformValue("EnableFog", m_enableFog);
         }
     }
