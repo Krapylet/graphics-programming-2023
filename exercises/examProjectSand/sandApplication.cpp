@@ -94,9 +94,9 @@ void SandApplication::HandlePlayerMovement() {
     
     float inputAngularSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_A))
-        inputAngularSpeed += -1.0f;
-    if (window.IsKeyPressed(GLFW_KEY_D))
         inputAngularSpeed += 1.0f;
+    if (window.IsKeyPressed(GLFW_KEY_D))
+        inputAngularSpeed += -1.0f;
     
     // Then translation
     float inputSpeed = 0;
@@ -124,16 +124,17 @@ void SandApplication::HandlePlayerMovement() {
     up = transposed[1];
     forward = transposed[2];
 
-    // Apply speed to the translation
+    // Apply speed over time to the translation
     float delta = GetDeltaTime();
     glm::vec3 translation = playerTransform->GetTranslation();
     glm::vec3 rotation = playerTransform->GetRotation();
     
     translation += forward * inputSpeed * delta;
-    
-    //rotation += up * ;
+    rotation += up * inputAngularSpeed * delta;
 
+    // apply the updated translation and rotation to the model.
     playerTransform->SetTranslation(translation);
+    playerTransform->SetRotation(rotation);
 }
 
 // Makes camera follow the model in m_playerModel in a third person view.

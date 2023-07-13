@@ -81,8 +81,8 @@ private:
     // Player stuff
     std::shared_ptr<SceneModel> m_playerModel;
     float m_cameraPlayerDistance = 5.0f;
-    float m_playerSpeed = 1.0f;
-    float m_playerAngularSpeed = 0.1f;
+    float m_playerSpeed = 5.0f;
+    float m_playerAngularSpeed = 0.5f;
 
     // Configuration values
     float m_exposure;
