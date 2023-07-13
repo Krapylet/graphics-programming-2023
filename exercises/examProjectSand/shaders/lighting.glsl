@@ -87,8 +87,8 @@ vec3 ComputeLighting(vec3 position, SurfaceData data, vec3 viewDir, bool indirec
 	if (indirect && LightIndirect)
 	{
 		vec3 diffuseIndirect = ComputeDiffuseIndirectLighting(data);
-		//vec3 specularIndirect = ComputeSpecularIndirectLighting(data, viewDir);
-		light += diffuseIndirect; //CombineIndirectLighting(diffuseIndirect, specularIndirect, data, viewDir);
+		vec3 specularIndirect = ComputeSpecularIndirectLighting(data, viewDir);
+		light += CombineIndirectLighting(diffuseIndirect, specularIndirect, data, viewDir);
 	}
 
 	return light;

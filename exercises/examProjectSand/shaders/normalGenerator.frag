@@ -23,4 +23,16 @@ void main()
 	FragAlbedo = vec4(Color, 1);
 
 	FragOthers = vec4(1,0.5,0,1);
+
+
+		// --------- Mix depth normal and normal map normal  --------
+	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
+	// Use a mix and a universal property float to set the how controlling each of them are.
+
+	// How do you make these variable names meaningfull while keeping them from becomming absolute gibberish???
+	// vec3 normalMapTangetSpaceNormal = texture(NormalMap, VertexTexCoord).rgb * 2 - 1;
+	// REmember to cconvert form 0-1 to -1 - 1
+
+	// Combine normals with the UDN method
+	// vec3 combinedNormal =  normalize(float3(n1.xy + n2.xy, n1.z));	
 }
