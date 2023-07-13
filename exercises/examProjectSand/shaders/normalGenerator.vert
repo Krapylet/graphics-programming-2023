@@ -89,7 +89,7 @@ void main()
 	float deltaX = (depthSampleEast - depthSampleWest)/(eastUV.x - westUV.x);
 	float deltaY = (depthSampleNorth - depthSampleSouth)/(northUV.y - southUV.y);
 	
-	vec3 normal = normalize(vec3(deltaX, deltaY, 1));
+	vec3 normal = normalize(vec3(deltaX, 1, deltaY));
 
 	// we can also use one of the direction pairs to create a tangent
 	vec3 tangent = normalize(vec3(northUV, depthSampleNorth) - vec3(southUV, depthSampleNorth));

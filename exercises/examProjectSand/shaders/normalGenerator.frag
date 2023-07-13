@@ -20,7 +20,7 @@ void main()
 {	
 	FragNormal = ViewNormal.xy;
 
-	FragAlbedo = vec4(Color, 1);
+	FragAlbedo = vec4(ViewNormal, 1);
 
 	FragOthers = vec4(1,0.5,0,1);
 

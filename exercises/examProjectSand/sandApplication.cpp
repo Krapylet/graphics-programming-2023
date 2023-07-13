@@ -417,8 +417,8 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    //std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    //m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     // add second canon to test whether it can be moved
     //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
