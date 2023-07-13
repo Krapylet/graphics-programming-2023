@@ -87,39 +87,53 @@ void SandApplication::Update()
 
 // Moves the player transform based in player input. Control with WASD
 void SandApplication::HandlePlayerMovement() {
-    // Initialize variables.
-    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
-    glm::vec3 translation = playerTransform->GetTranslation();
-    Window window = GetMainWindow();
-    float delta = GetDeltaTime();
     
     // Take keyboard input
-    float rotation = 0;
+    const Window& window = GetMainWindow();
+    // First rotation
+    
+    float inputAngularSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_A))
-        rotation = -1.0f;
+        inputAngularSpeed += -1.0f;
     if (window.IsKeyPressed(GLFW_KEY_D))
-        rotation = 1.0f;
-
-    float speed = 0;
+        inputAngularSpeed += 1.0f;
+    
+    // Then translation
+    float inputSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_W))
-        speed = -1.0f;
+        inputSpeed += 1.0f;
     if (window.IsKeyPressed(GLFW_KEY_S))
-        speed = 1.0f;
+        inputSpeed += -0.3f;
 
-    speed *= m_playerSpeed * delta;
-    rotation *= m_playerAngularSpeed * delta;
+    // Multiply result by player parameters
+    inputSpeed *= m_playerSpeed;
+    inputAngularSpeed *= m_playerAngularSpeed;
 
     // Double speed if SHIFT is pressed
     if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
-        speed *= 2.0f;
+        inputSpeed *= 2.0f;
+    
 
+    // Find the local directions for the player objects
     glm::vec3 right, up, forward;
-    m_cameraController.GetCamera()->GetCamera()->ExtractVectors(right, up, forward);
-    translation += inputTranslation.x * right;
-    translation += inputTranslation.y * forward;
+    // Cut off the 4th row and collumn.
+    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
+    glm::mat3 transposed = glm::transpose(playerTransform->GetTranslationMatrix());
 
-    transform.SetTranslation(translation);
+    right = transposed[0];
+    up = transposed[1];
+    forward = transposed[2];
 
+    // Apply speed to the translation
+    float delta = GetDeltaTime();
+    glm::vec3 translation = playerTransform->GetTranslation();
+    glm::vec3 rotation = playerTransform->GetRotation();
+    
+    translation += forward * inputSpeed * delta;
+    
+    //rotation += up * ;
+
+    playerTransform->SetTranslation(translation);
 }
 
 // Makes camera follow the model in m_playerModel in a third person view.
