@@ -72,11 +72,91 @@ void SandApplication::Update()
     Application::Update();
 
     // Update camera controller
-    m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+    //m_cameraController.Update(GetMainWindow(), GetDeltaTime());
 
+    // Move car with WASD
+    HandlePlayerMovement();
+
+    // Follow car insterad of free cam
+    MakeCameraFollowPlayer();
+    
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);
     m_scene.AcceptVisitor(rendererSceneVisitor);
+}
+
+// Moves the player transform based in player input. Control with WASD
+void SandApplication::HandlePlayerMovement() {
+    // Initialize variables.
+    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
+    glm::vec3 translation = playerTransform->GetTranslation();
+    Window window = GetMainWindow();
+    float delta = GetDeltaTime();
+    
+    // Take keyboard input
+    float rotation = 0;
+    if (window.IsKeyPressed(GLFW_KEY_A))
+        rotation = -1.0f;
+    if (window.IsKeyPressed(GLFW_KEY_D))
+        rotation = 1.0f;
+
+    float speed = 0;
+    if (window.IsKeyPressed(GLFW_KEY_W))
+        speed = -1.0f;
+    if (window.IsKeyPressed(GLFW_KEY_S))
+        speed = 1.0f;
+
+    speed *= m_playerSpeed * delta;
+    rotation *= m_playerAngularSpeed * delta;
+
+    // Double speed if SHIFT is pressed
+    if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
+        speed *= 2.0f;
+
+    glm::vec3 right, up, forward;
+    m_cameraController.GetCamera()->GetCamera()->ExtractVectors(right, up, forward);
+    translation += inputTranslation.x * right;
+    translation += inputTranslation.y * forward;
+
+    transform.SetTranslation(translation);
+
+}
+
+// Makes camera follow the model in m_playerModel in a third person view.
+void SandApplication::MakeCameraFollowPlayer() {
+    // to make camera follow car: each frame, copy transform, and then rotate a bit around x, and then translate back.
+    // First, match camera translation to followed object.
+    const float PI = 3.14159265358979;
+
+    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
+    std::shared_ptr<Transform> cameraTransform = m_cameraController.GetCamera()->GetTransform();
+
+    // Then rotate the camera to point mostly the same way as the player model around the y axis.
+    // (camera and player rotation is inverted on the x and z axsis, so we have to negate them to match them.)
+    glm::vec3 rotation = glm::vec3(0, playerTransform->GetRotation().y, 0);
+
+    // Add pi around y axis so that camera points the right way.
+    rotation += glm::vec3(0, PI, 0);
+
+    // Also rotate it slightly around the x axis to point it a bit downards.
+    rotation += glm::vec3(-PI / 16, 0, 0);
+    cameraTransform->SetRotation(rotation);
+
+
+    //// then match the camera translation to the camera
+    glm::vec3 translation = playerTransform->GetTranslation();
+
+    // To move the camera, we need to know the camera's forward direction.
+    glm::vec3 right; glm::vec3 up; glm::vec3 forward;
+    std::shared_ptr<SceneCamera> camera = m_cameraController.GetCamera();
+    camera->GetCamera()->ExtractVectors(right, up, forward);
+
+    // Now we can move the camera back and a bit up to get the player model in frame
+    translation += (forward + up / 3.0f) * m_cameraPlayerDistance;
+    cameraTransform->SetTranslation(translation);
+
+    // Lastly, make the actual camera viewport update according to the transform changes.
+    camera->MatchCameraToTransform();
 }
 
 void SandApplication::Render()
@@ -418,7 +498,10 @@ void SandApplication::InitializeModels()
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+    std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
+    m_scene.AddSceneNode(player);
+
+    m_playerModel = player;
 
     // add second canon to test whether it can be moved
     //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
@@ -628,6 +711,14 @@ void SandApplication::RenderGUI()
         }
     }
     
+
+    if (auto window = m_imGui.UseWindow("Player parameters"))
+    {
+        ImGui::DragFloat("Camera distance", &m_cameraPlayerDistance, 1.0f, 2.0f, 10.0f);
+        ImGui::DragFloat("Speed", &m_playerSpeed, 1.0f, 1.0f, 10.0f);
+        ImGui::DragFloat("AngularSpeed", &m_playerAngularSpeed, 0.1f, 0.1f, 2.0f);
+    }
+
 
     if (auto window = m_imGui.UseWindow("Post FX"))
     {

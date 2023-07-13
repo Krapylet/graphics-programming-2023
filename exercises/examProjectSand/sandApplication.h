@@ -3,6 +3,7 @@
 #include <ituGL/application/Application.h>
 
 #include <ituGL/scene/Scene.h>
+#include <ituGL/scene/SceneModel.h>
 #include <ituGL/texture/FramebufferObject.h>
 #include <ituGL/renderer/Renderer.h>
 #include <ituGL/camera/CameraController.h>
@@ -39,6 +40,9 @@ private:
 
     void RenderGUI();
 
+    void MakeCameraFollowPlayer();
+    void HandlePlayerMovement();
+
 private:
     // Helper object for debug GUI
     DearImGui m_imGui;
@@ -73,6 +77,12 @@ private:
     std::shared_ptr<Texture2DObject> m_sceneTexture;
     std::array<std::shared_ptr<FramebufferObject>, 2> m_tempFramebuffers;
     std::array<std::shared_ptr<Texture2DObject>, 2> m_tempTextures;
+
+    // Player stuff
+    std::shared_ptr<SceneModel> m_playerModel;
+    float m_cameraPlayerDistance;
+    float m_playerSpeed;
+    float m_playerAngularSpeed;
 
     // Configuration values
     float m_exposure;
