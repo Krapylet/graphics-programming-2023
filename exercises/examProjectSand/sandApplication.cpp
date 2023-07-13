@@ -118,8 +118,8 @@ void SandApplication::HandlePlayerMovement() {
     glm::vec3 right, up, forward;
     // Cut off the 4th row and collumn.
     std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
-    glm::mat3 transposed = glm::transpose(playerTransform->GetTranslationMatrix());
-
+    glm::mat3 transposed = playerTransform->GetTransformMatrix(); // glm::transpose(playerTransform->GetTranslationMatrix());
+    
     right = transposed[0];
     up = transposed[1];
     forward = transposed[2];
