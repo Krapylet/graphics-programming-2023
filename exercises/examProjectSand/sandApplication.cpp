@@ -589,7 +589,7 @@ void SandApplication::InitializeRenderer()
             m_mainLight->SetShadowBias(0.001f);
         }
         std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial));
-        shadowMapRenderPass->SetVolume(glm::vec3(-3.0f * m_mainLight->GetDirection()), glm::vec3(6.0f));
+        shadowMapRenderPass->SetVolume(glm::vec3(-3.0f * m_mainLight->GetDirection()), glm::vec3(30.0f));
         m_renderer.AddRenderPass(std::move(shadowMapRenderPass));
     }
 
