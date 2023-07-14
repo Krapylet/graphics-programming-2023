@@ -20,42 +20,8 @@ uniform float SampleDistance;
 uniform sampler2D DepthMap;
 
 // Not yet used
+// Move to fragment shader
 uniform sampler2D NoiseMap; // Pr pixel noise for the light intensity
-
-float Ease(float value)
-{
-	// sine easing curve. Experiment with more interesting distributions.
-	//float easedOffset = (cos(3.14f * value) - 1) / 2;
-	return value;
-}
-
-float GetHeightFromSample(vec2 pos)
-{
-	// Sample depth texture
-	// We take a couple of extra samples in each direction to smooth out any extreme pixels.
-	// Since the depth map is black and white, we only need to look at the red value.
-	float depthSampleCenter = texture(DepthMap, pos).r;
-	
-	float depthSampleNorth = texture(DepthMap, pos + vec2(1,0) * SampleDistance).r;
-	float depthSampleSouth = texture(DepthMap, pos + vec2(-1,0) * SampleDistance).r;
-	float depthSampleEast = texture(DepthMap, pos + vec2(0,1) * SampleDistance).r;
-	float depthSampleWest = texture(DepthMap, pos + vec2(0,-1) * SampleDistance).r;
-	
-	float depthSample = (depthSampleCenter + depthSampleNorth + depthSampleSouth + depthSampleEast + depthSampleWest)/5;
-
-	// square to create a better depth distribution. Otherwise we get a bunch of extreme spikes.
-	depthSample = depthSample * depthSample;
-
-	// We also invert so that darker values are higher.
-	float vertexOffsetIntensity = (1 - depthSample) * OffsetStrength;
-	
-	// apply easing to create an intesting distribution.
-	float easedOffset = Ease(vertexOffsetIntensity);
-
-	// Apply offset on y axis. We don't need a transformation vertex since tangent space and is aligned with every single vertex in the plane.
-	return easedOffset;
-}
-
 
 void main()
 {
@@ -67,48 +33,21 @@ void main()
 	
 	// final vertex position (for opengl rendering, not for lighting)
 	// transforms from model space into world space.
-	float vertexOffset = GetHeightFromSample(TexCoord);
+	float vertexOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
 
 	vec3 vertexOffsetVector = vec3(0, vertexOffset, 0);
 
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
 
-
-
-
-
-	// ------------- normal --------------
-	// To calculat the new normal of that point, we also need two adjacent points to create a corss product.
-	// "Height" should be stored in z.
-
-	// Sample depth texture to calculate the normal
-	// use min to avoid going out of bounds
-	vec2 northUV = min(TexCoord + vec2(0,1) * SampleDistance, vec2(1,1));
-	vec2 southUV = max(TexCoord + vec2(0,-1) * SampleDistance, vec2(0,0));
-	vec2 eastUV = min(TexCoord + vec2(1,0) * SampleDistance, vec2(1,1));
-	vec2 westUV = max(TexCoord + vec2(-1,0) * SampleDistance, vec2(0,0));
-
-	// Since the depth map is black and white, we only need to look at the red value.
-	float depthSampleNorth = Ease(texture(DepthMap, northUV).r);
-	float depthSampleSouth = Ease(texture(DepthMap, southUV).r);
-	float depthSampleEast = Ease(texture(DepthMap, eastUV).r);
-	float depthSampleWest = Ease(texture(DepthMap, westUV).r);
-
-	// change in height across samples pr. unit.
-	float deltaX = (depthSampleEast - depthSampleWest)/(eastUV.x - westUV.x);
-	float deltaY = (depthSampleNorth - depthSampleSouth)/(northUV.y - southUV.y);
-	
-	// this looks more correct than having 1 in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
-	vec3 normal = normalize(vec3(deltaX, 1, deltaY));
-
-	// we can also use one of the direction pairs to create a tangent
-	vec3 tangent = normalize(vec3(northUV, depthSampleNorth) - vec3(southUV, depthSampleNorth));
-
-	// And this tangent can be used to compute the bitangent
-	vec3 bitangent = normalize(cross(tangent, normal));
+	vec3 tangent;
+	vec3 bitangent;
+	vec3 normal;
+	GetTangetnSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, tangent, bitangent, normal);
 
 	// Convert normal and tangents from world space to view space
 	ViewTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
 	ViewBitangent = (WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
 	ViewNormal = (WorldViewMatrix * vec4(normal, 0.0)).xyz;
+
+	// Move Sample Distance to method paramter.
 }
