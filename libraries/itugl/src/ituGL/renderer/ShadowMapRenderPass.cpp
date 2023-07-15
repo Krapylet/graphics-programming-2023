@@ -74,6 +74,9 @@ void ShadowMapRenderPass::Render()
         drawcallInfo.vao.Bind();
 
         // Set up object matrix
+
+        // If the object uses the dessert sand shader, use the custom shadowshader program that retains the vertex offsets.
+        //drawcallInfo.material.
         renderer.UpdateTransforms(shaderProgram, drawcallInfo.worldMatrixIndex, first);
 
         // Render drawcall

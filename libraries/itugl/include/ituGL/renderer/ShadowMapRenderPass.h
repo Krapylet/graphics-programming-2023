@@ -26,6 +26,10 @@ private:
 
     std::shared_ptr<const Material> m_material;
 
+    // Extra materials used to detect and replace a certain material with another material than the defualt empty.vert/frag.
+    std::shared_ptr<const Material> m_exceptionMaterial;
+    std::shared_ptr<const Material> m_exceptionMaterialReplacement;
+
     int m_drawcallCollectionIndex;
 
     glm::vec3 m_volumeCenter;
