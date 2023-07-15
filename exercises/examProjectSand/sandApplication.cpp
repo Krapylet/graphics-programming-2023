@@ -732,7 +732,7 @@ void SandApplication::RenderGUI()
     {
         ImGui::DragFloat("Camera distance", &m_cameraPlayerDistance, 1.0f, 2.0f, 10.0f);
         ImGui::DragFloat("Speed", &m_playerSpeed, 1.0f, 1.0f, 10.0f);
-        ImGui::DragFloat("AngularSpeed", &m_playerAngularSpeed, 0.1f, 0.1f, 2.0f);
+        ImGui::DragFloat("AngularSpeed", &m_playerAngularSpeed, 0.2f, 0.1f, 4.0f);
     }
 
 

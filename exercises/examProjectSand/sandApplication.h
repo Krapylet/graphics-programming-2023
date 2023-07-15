@@ -82,16 +82,16 @@ private:
     std::shared_ptr<SceneModel> m_playerModel;
     float m_cameraPlayerDistance = 5.0f;
     float m_playerSpeed = 5.0f;
-    float m_playerAngularSpeed = 0.5f;
+    float m_playerAngularSpeed = 2.0f;
 
     // Configuration values
     float m_exposure;
     float m_contrast;
     float m_hueShift;
     float m_saturation;
-    float m_sampleDistance = 0.02f;
+    float m_sampleDistance = 0.1f;
     float m_offsetStength = 2;
-    float m_enableFog = 0.3f;
+    float m_enableFog = 0.0f;
     glm::vec3 m_colorFilter;
     int m_blurIterations;
     glm::vec2 m_bloomRange;

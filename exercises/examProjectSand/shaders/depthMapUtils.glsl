@@ -21,7 +21,7 @@ float GetHeightFromSample(vec2 pos, sampler2D depthMap, float sampleDistance, fl
 
 	// This following line should probably be moved into the easing function to make height and normals match better.
 	// square to create a better depth distribution. Otherwise we get a bunch of extreme spikes.
-	depthSample = depthSample * depthSample * offsetStrength;
+	//depthSample = depthSample * depthSample * offsetStrength;
 
 	// We also invert so that darker values are higher.
 	float vertexOffsetIntensity = 1 - depthSample;
@@ -53,8 +53,9 @@ void GetTangetnSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	float deltaX = (depthSampleEast - depthSampleWest)/(eastUV.x - westUV.x);
 	float deltaY = (depthSampleNorth - depthSampleSouth)/(northUV.y - southUV.y);
 	
-	// this looks more correct than having 1 in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
-	normal = normalize(vec3(deltaX, 1, deltaY));
+	// this looks more correct than having the constant in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
+	// We're setting the normal length to higher than one because the normals generated tend to be extremely tilted.
+	normal = normalize(vec3(deltaX, 10, deltaY));
 
 	// we can also use one of the direction pairs to create a tangent
 	tangent = normalize(vec3(northUV, depthSampleNorth) - vec3(southUV, depthSampleNorth));
