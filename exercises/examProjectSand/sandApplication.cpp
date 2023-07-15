@@ -717,7 +717,7 @@ void SandApplication::RenderGUI()
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
 
-        if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.01f, 2.0f))
+        if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.1f, 10.0f))
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
         }

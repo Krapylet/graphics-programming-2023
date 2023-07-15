@@ -89,8 +89,8 @@ private:
     float m_contrast;
     float m_hueShift;
     float m_saturation;
-    float m_sampleDistance = 0.1f;
-    float m_offsetStength = 2;
+    float m_sampleDistance = 0.2f;
+    float m_offsetStength = 2.0f;
     float m_enableFog = 0.0f;
     glm::vec3 m_colorFilter;
     int m_blurIterations;

@@ -42,7 +42,7 @@ void main()
 	vec3 tangent;
 	vec3 bitangent;
 	vec3 normal;
-	GetTangetnSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, tangent, bitangent, normal);
+	GetTangetnSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, tangent, bitangent, normal);
 
 	// Convert normal and tangents from world space to view space
 	ViewTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
