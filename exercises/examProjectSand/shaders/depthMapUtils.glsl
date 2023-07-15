@@ -50,7 +50,9 @@ void GetTangetnSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	float deltaY = (depthSampleNorth - depthSampleSouth)/(northUV.y - southUV.y);
 	
 	// this looks more correct than having the constant in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
-	// We're setting the normal length to higher than one because the normals generated tend to be extremely tilted.
+	// We're setting the normal length to higher than 1 because the normals generated tend to be extremely tilted on the height map
+	// compared to the weight we're giving each vertex offset. 8 seemed like a good contant value.
+
 	normal = normalize(vec3(deltaX, 1 + offsetStrength, deltaY));
 
 	// we can also use one of the direction pairs to create a tangent
