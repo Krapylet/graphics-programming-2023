@@ -124,16 +124,17 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
             glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
 
             // 4.1 Calculate position
-            float x = r * length / (rows - 1);
+            // Subtract half lengt/width to create pivot at center.
+            float x = r * length / (rows - 1) - length/2;
             float y = 0;
-            float z = c * width / (collumns - 1);
+            float z = c * width / (collumns - 1) - width/2;
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
 
             // 4.2 calulate texture coordinate (UV). Both are clamped betwen 0-1
             // For some reason, sampling near the edges becomes a problem. It seems to be a promlem with the loader? The image gets compressed quite a bit.
-            float u = x / length;
-            float v = z / width;
+            float u = (x + length / 2) / length;
+            float v = (z + width / 2 )/ width;
             glm::vec2 texCoord = glm::vec2(u, v);
 
             // 4.3 Add vetexes to VBO
