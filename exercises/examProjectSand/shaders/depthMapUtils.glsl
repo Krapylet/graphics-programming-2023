@@ -29,7 +29,7 @@ float GetHeightFromSample(vec2 pos, sampler2D depthMap, float sampleDistance, fl
 	return easedOffset;
 }
 
-void GetTangetnSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, out vec3 tangent, out vec3 bitangent, out vec3 normal){
+void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, out vec3 tangent, out vec3 bitangent, out vec3 normal){
 	// "Height" should be stored in z.
 
 	// Sample depth texture to calculate the normal

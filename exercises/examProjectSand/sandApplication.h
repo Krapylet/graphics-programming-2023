@@ -67,6 +67,7 @@ private:
     std::shared_ptr<Material> m_deferredMaterial;
     std::shared_ptr<Material> m_desertSandMaterial;
     std::shared_ptr<Material> m_desertSandShadowReplacementMaterial;
+    std::shared_ptr<Material> m_driveOnSandMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
     std::shared_ptr<Material> m_bloomMaterial;
@@ -84,14 +85,22 @@ private:
     float m_playerSpeed = 5.0f;
     float m_playerAngularSpeed = 2.0f;
 
+    // Desert stuff.
+    std::shared_ptr<SceneModel> m_desertModel;
+    float m_sampleDistance = 0.2f;
+    float m_offsetStength = 2.0f;
+    float m_enableFog = 0.0f;
+    float m_desertWidth = 30;
+    float m_desertLength = 10;
+    float m_desertVertexRows = 300;
+    float m_desertVertexCollumns = 100;
+
     // Configuration values
     float m_exposure;
     float m_contrast;
     float m_hueShift;
     float m_saturation;
-    float m_sampleDistance = 0.2f;
-    float m_offsetStength = 2.0f;
-    float m_enableFog = 0.0f;
+
     glm::vec3 m_colorFilter;
     int m_blurIterations;
     glm::vec2 m_bloomRange;

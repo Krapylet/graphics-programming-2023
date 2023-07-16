@@ -365,6 +365,69 @@ void SandApplication::InitializeMaterials()
         m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
     }
 
+    // Drive on sand material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/normalGenerator.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("desertUV");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+
+                // We just assume that the desert is always placed at 0,0. Otherwise it becomes a hassle to calculat the UV, though it's
+                // Not excatly hard to do so.
+                glm::vec3 modelPos = m_playerModel->GetTransform()->GetTranslation();
+                glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+                float u = (desertScale.x * m_desertWidth / 2 - modelPos.x) / m_desertWidth * desertScale.x;
+                float v = (desertScale.z * m_desertLength / 2 - modelPos.z) / m_desertLength * desertScale.z;
+                shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("desertUV");
+
+        // Create material
+        m_driveOnSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        //// Set material uniforms
+
+        // Color
+        m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
+
+        // Depth map. Since it's black and white, there's no reason to load more than one channel.
+        m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
+
+        // Initial depth parameters
+        m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_driveOnSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+    }
+
     // Sand material
     {
         // Load and build shader
@@ -513,17 +576,26 @@ void SandApplication::InitializeModels()
     // The loader probably needs to be configured differntly for each different material we use for an object.
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
+
+    // Replace the default model material with the special material that offsets vertex positions by the height map.
+    int materialCount = cannonModel->GetMaterialCount();
+    for (unsigned int i = 0; i < materialCount; i++)
+    {
+        cannonModel->SetMaterial(i, m_driveOnSandMaterial);
+    }
+
     m_scene.AddSceneNode(player);
 
     m_playerModel = player;
 
     // Generate ground plane
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 30, 100, 300);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength,m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
    
     // plane model to scene
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
+    m_desertModel = plane;
 }
 
 void SandApplication::InitializeFramebuffers()

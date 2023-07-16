@@ -27,8 +27,7 @@ void main()
 
 	// ------- Vertex position --------
 	
-	// final vertex position (for opengl rendering, not for lighting)
-	// transforms from model space into world space.
+	// final vertex position (for opengl rendering, *AND* for lighting)
 	float vertexOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
 
 	vec3 vertexOffsetVector = vec3(0, vertexOffset, 0);
@@ -38,7 +37,7 @@ void main()
 	vec3 tangent;
 	vec3 bitangent;
 	vec3 normal;
-	GetTangetnSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, tangent, bitangent, normal);
+	GetTangentSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, tangent, bitangent, normal);
 
 	// Convert normal and tangents from world space to view space
 	ViewTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;
