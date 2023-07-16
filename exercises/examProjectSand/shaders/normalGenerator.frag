@@ -12,7 +12,6 @@ layout (location = 2) out vec4 FragOthers;
 
 //Uniforms
 uniform vec3 Color;
-uniform sampler2D ColorTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
 

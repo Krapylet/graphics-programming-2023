@@ -19,10 +19,6 @@ uniform float OffsetStrength;
 uniform float SampleDistance;
 uniform sampler2D DepthMap;
 
-// Not yet used
-// Move to fragment shader
-uniform sampler2D NoiseMap; // Pr pixel noise for the light intensity
-
 void main()
 {
 

@@ -7,9 +7,13 @@
 #include <ituGL/texture/Texture2DObject.h>
 #include <ituGL/texture/FramebufferObject.h>
 
-ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> material, int drawcallCollectionIndex)
+ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> material,
+    std::shared_ptr<const Material> exceptionMaterial, std::shared_ptr<const Material> replacemetnMaterial, 
+    int drawcallCollectionIndex)
     : m_light(light)
     , m_material(material)
+    , m_exceptionMaterial(exceptionMaterial)
+    , m_replacementMaterial(exceptionMaterial)
     , m_drawcallCollectionIndex(drawcallCollectionIndex)
     , m_volumeCenter(0.0f)
     , m_volumeSize(1.0f)
@@ -73,14 +77,26 @@ void ShadowMapRenderPass::Render()
         // Bind the vao
         drawcallInfo.vao.Bind();
 
-        // Set up object matrix
 
+
+        //// Set up object matrix
         // If the object uses the dessert sand shader, use the custom shadowshader program that retains the vertex offsets.
-        //drawcallInfo.material.
-        renderer.UpdateTransforms(shaderProgram, drawcallInfo.worldMatrixIndex, first);
+        bool drawcallShouldUseReplacementMaterial = drawcallInfo.material.GetShaderProgram() == m_exceptionMaterial->GetShaderProgram();
+        if (drawcallShouldUseReplacementMaterial) {
+            m_exceptionMaterial->Use();
+            renderer.UpdateTransforms(m_exceptionMaterial->GetShaderProgram(), drawcallInfo.worldMatrixIndex, first);
+            drawcallInfo.drawcall.Draw();
+            m_material->Use();
+        }
+        // else use the default empty shader program.
+        else {
+            renderer.UpdateTransforms(shaderProgram, drawcallInfo.worldMatrixIndex, first);
+            drawcallInfo.drawcall.Draw();
+        }
+        
 
         // Render drawcall
-        drawcallInfo.drawcall.Draw();
+        
 
         first = false;
     }

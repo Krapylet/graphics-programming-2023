@@ -11,7 +11,9 @@ class Material;
 class ShadowMapRenderPass : public RenderPass
 {
 public:
-    ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> material, int drawcallCollectionIndex = 0);
+    ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> material,
+        std::shared_ptr<const Material> exceptionMaterial, std::shared_ptr<const Material> replacementMaterial,
+        int drawcallCollectionIndex = 0);
 
     void SetVolume(glm::vec3 volumeCenter, glm::vec3 volumeSize);
 
@@ -27,8 +29,9 @@ private:
     std::shared_ptr<const Material> m_material;
 
     // Extra materials used to detect and replace a certain material with another material than the defualt empty.vert/frag.
+    // We have to use two different materials, since the we only want to include the vertexshader from the exception material.
     std::shared_ptr<const Material> m_exceptionMaterial;
-    std::shared_ptr<const Material> m_exceptionMaterialReplacement;
+    std::shared_ptr<const Material> m_replacementMaterial;
 
     int m_drawcallCollectionIndex;
 
