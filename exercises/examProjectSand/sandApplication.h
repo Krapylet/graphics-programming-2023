@@ -65,7 +65,6 @@ private:
     // Materials
     std::shared_ptr<Material> m_defaultMaterial;
     std::shared_ptr<Material> m_deferredMaterial;
-    std::shared_ptr<Material> m_flatColorMaterial;
     std::shared_ptr<Material> m_desertSandMaterial;
     std::shared_ptr<Material> m_desertSandShadowReplacementMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
