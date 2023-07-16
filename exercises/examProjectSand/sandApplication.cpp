@@ -234,7 +234,7 @@ void SandApplication::InitializeLights()
 
 void SandApplication::InitializeMaterials()
 {
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
     // Shadow map material
     {
@@ -400,7 +400,7 @@ void SandApplication::InitializeMaterials()
                 glm::vec3 modelPos = m_playerModel->GetTransform()->GetTranslation();
                 glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
                 float u = (desertScale.x * m_desertWidth / 2 - modelPos.x) / m_desertWidth * desertScale.x;
-                float v = (desertScale.z * m_desertLength / 2 - modelPos.z) / m_desertLength * desertScale.z;
+                float v = -(desertScale.z * m_desertLength / 2 - modelPos.z) / m_desertLength * desertScale.z;
                 shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
             },
             nullptr
