@@ -22,5 +22,7 @@ void main()
 	vec3 viewNormal = SampleNormalMap(NormalTexture, TexCoord, normalize(ViewNormal), normalize(ViewTangent), normalize(ViewBitangent));
 	FragNormal = viewNormal.xy;
 
-	FragOthers = texture(SpecularTexture, TexCoord);
+	// hardcode metal metalness etc. since we don't have a texture for that.
+	// ambientOcclusion, metalness, roughness, 
+	FragOthers = vec4(0, 0.8f, 0.3f, 0);
 }

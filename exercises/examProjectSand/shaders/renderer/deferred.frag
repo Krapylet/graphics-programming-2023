@@ -5,13 +5,16 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 //Uniforms
+// output from the gbuffer
 uniform sampler2D DepthTexture;
 uniform sampler2D AlbedoTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D OthersTexture;
+
 uniform mat4 InvViewMatrix;
 uniform mat4 InvProjMatrix;
 
+// fog stuff
 uniform vec3 FadeColor;
 uniform float EnableFog;
 

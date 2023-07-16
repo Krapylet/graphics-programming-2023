@@ -234,6 +234,8 @@ void SandApplication::InitializeLights()
 
 void SandApplication::InitializeMaterials()
 {
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+
     // Shadow map material
     {
         // Load and build shader
@@ -316,7 +318,6 @@ void SandApplication::InitializeMaterials()
 
         // Set material uniforms
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandShadowReplacementMaterial->SetUniformValue("DepthMap", displacementMap);
 
         // Initial depth parameters
@@ -410,7 +411,6 @@ void SandApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
         
         // Initial depth parameters
@@ -557,12 +557,6 @@ void SandApplication::InitializeModels()
     m_scene.AddSceneNode(player);
 
     m_playerModel = player;
-
-    // add second canon to test whether it can be moved
-    //std::shared_ptr<SceneModel> secondCanon = std::make_shared<SceneModel>("cannon2", cannonModel);
-    //std::shared_ptr<Transform> transform = secondCanon->GetTransform();
-    //transform->SetTranslation(transform->GetTranslation() + glm::vec3(1, 1, 1));
-    //m_scene.AddSceneNode(secondCanon);
 
     // Generate ground plane
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(10, 30, 100, 300);
