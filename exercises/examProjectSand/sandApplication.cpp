@@ -388,7 +388,7 @@ void SandApplication::InitializeMaterials()
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
         ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
         ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
-        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Forward");
+        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Right");
 
 
         // Register shader with renderer
@@ -408,10 +408,10 @@ void SandApplication::InitializeMaterials()
                 v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
                 shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
 
-                // Calculate model forward direction
+                // Calculate model right direction direction, so we can cross it with the plane's normal to get the new model forward.
                 glm::mat3 transposed = m_playerModel->GetTransform()->GetTransformMatrix(); // glm::transpose(playerTransform->GetTranslationMatrix());
-                glm::vec3 forward = transposed[2];
-                shaderProgram.SetUniform(forwardLocation, forward);
+                glm::vec3 right = transposed[0];
+                shaderProgram.SetUniform(forwardLocation, right);
             },
             nullptr
                 );
@@ -422,7 +422,7 @@ void SandApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewProjMatrix");
         filteredUniforms.insert("desertUV");
         filteredUniforms.insert("PivotPositon");
-        filteredUniforms.insert("Forward");
+        filteredUniforms.insert("Right");
 
         // Create material
         m_driveOnSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);

@@ -20,7 +20,7 @@ uniform float SampleDistance;
 uniform sampler2D DepthMap;
 uniform vec3 PivotPosition; // position of pivot in world position
 uniform vec2 DesertUV; // position of pivot in desert UV space.
-uniform vec3 Forward;
+uniform vec3 Right;
 
 void main()
 {
@@ -46,7 +46,7 @@ void main()
 	// Transformation matrix that rotates the player model in the direction of the UV normal.
 	// Hopefully the pivot is in the center of the model...
 	vec3 eye = VertexPosition;
-	vec3 at = VertexPosition + Forward;
+	vec3 at = VertexPosition + cross(Right, normal);
 	vec3 up = normal;
 
 	// Calculate rotation matrix values
@@ -54,8 +54,8 @@ void main()
 	vec3 xaxis = normalize(cross(zaxis, up));
 	vec3 yaxis = cross(xaxis, zaxis);
 
-	// Right
-	//zaxis = -zaxis;
+	// Make rotation matrix work in a Right-handed coordinate system.
+	zaxis = -zaxis;
 
 	// Insert rotation matrix lookat values
 	mat4 rotateInPlaceMatrix = {
@@ -70,11 +70,7 @@ void main()
 
 
 	// Replace VertexPosition with RotatedWorldPos to enable rotation
-	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
-
-
-
-
+	gl_Position = WorldViewProjMatrix * vec4(rotatedWorldPos + vertexOffsetVector, 1.0);
 
 
 
