@@ -80,10 +80,12 @@ private:
     std::array<std::shared_ptr<Texture2DObject>, 2> m_tempTextures;
 
     // Player stuff
-    std::shared_ptr<SceneModel> m_playerModel;
+    std::shared_ptr<SceneModel> m_visualPlayerModel;
+    std::shared_ptr<SceneModel> m_parentModel;
+
     float m_cameraPlayerDistance = 5.0f;
-    float m_playerSpeed = 5.0f;
-    float m_playerAngularSpeed = 2.0f;
+    float m_playerSpeed = 100.0f;
+    float m_playerAngularSpeed = 8.0f;
 
     // Desert stuff.
     std::shared_ptr<SceneModel> m_desertModel;

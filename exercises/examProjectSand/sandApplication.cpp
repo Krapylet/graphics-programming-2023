@@ -101,9 +101,9 @@ void SandApplication::HandlePlayerMovement() {
     // Then translation
     float inputSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_W))
-        inputSpeed += 1.0f;
+        inputSpeed += -1.0f;
     if (window.IsKeyPressed(GLFW_KEY_S))
-        inputSpeed += -0.3f;
+        inputSpeed += 0.3f;
 
     // Multiply result by player parameters
     inputSpeed *= m_playerSpeed;
@@ -117,8 +117,8 @@ void SandApplication::HandlePlayerMovement() {
     // Find the local directions for the player objects
     glm::vec3 right, up, forward;
     // Cut off the 4th row and collumn.
-    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
-    glm::mat3 transposed = playerTransform->GetTransformMatrix(); // glm::transpose(playerTransform->GetTranslationMatrix());
+    std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
+    glm::mat3 transposed = parentTransform->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
     
     right = transposed[0];
     up = transposed[1];
@@ -126,40 +126,39 @@ void SandApplication::HandlePlayerMovement() {
 
     // Apply speed over time to the translation
     float delta = GetDeltaTime();
-    glm::vec3 translation = playerTransform->GetTranslation();
-    glm::vec3 rotation = playerTransform->GetRotation();
+    glm::vec3 translation = parentTransform->GetTranslation();
+    glm::vec3 rotation = parentTransform->GetRotation();
     
     translation += forward * inputSpeed * delta;
-    rotation += up * inputAngularSpeed * delta;
+    rotation += up * inputAngularSpeed * delta; 
 
-    // apply the updated translation and rotation to the model.
-    playerTransform->SetTranslation(translation);
-    playerTransform->SetRotation(rotation);
+    // apply the updated translation and rotation to the parent.
+    parentTransform->SetTranslation(translation);
+    parentTransform->SetRotation(rotation);
+
+    // Apply move the visual model along with the parnet
+    std::shared_ptr<Transform> playerModelTransform = m_visualPlayerModel->GetTransform();
+    playerModelTransform->SetTranslation(translation);
 }
 
-// Makes camera follow the model in m_playerModel in a third person view.
+// Makes camera follow the model in m_parentModel in a third person view.
 void SandApplication::MakeCameraFollowPlayer() {
     // to make camera follow car: each frame, copy transform, and then rotate a bit around x, and then translate back.
     // First, match camera translation to followed object.
     const float PI = 3.14159265358979;
 
-    std::shared_ptr<Transform> playerTransform = m_playerModel->GetTransform();
+    std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
     std::shared_ptr<Transform> cameraTransform = m_cameraController.GetCamera()->GetTransform();
 
-    // Then rotate the camera to point mostly the same way as the player model around the y axis.
-    // (camera and player rotation is inverted on the x and z axsis, so we have to negate them to match them.)
-    glm::vec3 rotation = glm::vec3(0, playerTransform->GetRotation().y, 0);
+    // Then rotate the camera to point the same way as the player model around the y axis.
+    glm::vec3 rotation = glm::vec3(0, parentTransform->GetRotation().y, 0);
 
-    // Add pi around y axis so that camera points the right way.
-    rotation += glm::vec3(0, PI, 0);
-
-    // Also rotate it slightly around the x axis to point it a bit downards.
+    // rotate it slightly around the x axis to point it a bit downards.
     rotation += glm::vec3(-PI / 16, 0, 0);
     cameraTransform->SetRotation(rotation);
 
-
     //// then match the camera translation to the camera
-    glm::vec3 translation = playerTransform->GetTranslation();
+    glm::vec3 translation = parentTransform->GetTranslation();
 
     // To move the camera, we need to know the camera's forward direction.
     glm::vec3 right; glm::vec3 up; glm::vec3 forward;
@@ -397,7 +396,7 @@ void SandApplication::InitializeMaterials()
             {
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-                glm::vec3 modelPos = m_playerModel->GetTransform()->GetTranslation();
+                glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
                 shaderProgram.SetUniform(objectPivotPositionLocation, modelPos);
 
                 // Calculate the models position on the desert model in UV coordinates.
@@ -409,7 +408,7 @@ void SandApplication::InitializeMaterials()
                 shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
 
                 // Calculate model right direction direction, so we can cross it with the plane's normal to get the new model forward.
-                glm::mat3 transposed = m_playerModel->GetTransform()->GetTransformMatrix(); // glm::transpose(playerTransform->GetTranslationMatrix());
+                glm::mat3 transposed = m_parentModel->GetTransform()->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
                 glm::vec3 right = transposed[0];
                 shaderProgram.SetUniform(forwardLocation, right);
             },
@@ -598,13 +597,22 @@ void SandApplication::InitializeModels()
 
     m_scene.AddSceneNode(player);
 
-    m_playerModel = player;
+    m_visualPlayerModel = player;
+
+    // The parent framework doesn't look like it's done, so Instead I'm doing a quick and dirty hack to emulate an empty parent of the
+    // camera and the player visual model.
+    // there's probably techinaclly a memory leak here, but i don't think i have time to fix it. It's small anyway.
+    std::shared_ptr<Model> debugCanonModel(loader.LoadNew("models/cannon/cannon.obj"));
+    std::shared_ptr<SceneModel> parent = std::make_shared<SceneModel>("parent", debugCanonModel);
+    parent->GetTransform()->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
+    m_scene.AddSceneNode(parent);
+    m_parentModel = parent;
+
+
 
     // Generate ground plane
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength,m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
-   
-    // plane model to scene
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
     m_desertModel = plane;
@@ -814,8 +822,8 @@ void SandApplication::RenderGUI()
     if (auto window = m_imGui.UseWindow("Player parameters"))
     {
         ImGui::DragFloat("Camera distance", &m_cameraPlayerDistance, 1.0f, 2.0f, 10.0f);
-        ImGui::DragFloat("Speed", &m_playerSpeed, 1.0f, 1.0f, 10.0f);
-        ImGui::DragFloat("AngularSpeed", &m_playerAngularSpeed, 0.2f, 0.1f, 4.0f);
+        ImGui::DragFloat("Speed", &m_playerSpeed, 10.0f, 10.0f, 100.0f);
+        ImGui::DragFloat("AngularSpeed", &m_playerAngularSpeed, 1.0f, 4.0f, 8.0f);
     }
 
 
