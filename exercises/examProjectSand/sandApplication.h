@@ -95,6 +95,10 @@ private:
     float m_desertVertexRows = 300;
     float m_desertVertexCollumns = 100;
 
+    // debug values
+    float u;
+    float v;
+
     // Configuration values
     float m_exposure;
     float m_contrast;

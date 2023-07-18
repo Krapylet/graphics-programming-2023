@@ -386,7 +386,10 @@ void SandApplication::InitializeMaterials()
         // Get transform related uniform locations
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
-        ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("desertUV");
+        ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+        ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
+        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Forward");
+
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -394,14 +397,21 @@ void SandApplication::InitializeMaterials()
             {
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-
-                // We just assume that the desert is always placed at 0,0. Otherwise it becomes a hassle to calculat the UV, though it's
-                // Not excatly hard to do so.
                 glm::vec3 modelPos = m_playerModel->GetTransform()->GetTranslation();
+                shaderProgram.SetUniform(objectPivotPositionLocation, modelPos);
+
+                // Calculate the models position on the desert model in UV coordinates.
+                glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
                 glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
-                float u = (desertScale.x * m_desertWidth / 2 - modelPos.x) / m_desertWidth * desertScale.x;
-                float v = -(desertScale.z * m_desertLength / 2 - modelPos.z) / m_desertLength * desertScale.z;
+                glm::vec3 desertPosOnDesert = modelPos - desertPos;
+                u = -desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+                v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
                 shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
+
+                // Calculate model forward direction
+                glm::mat3 transposed = m_playerModel->GetTransform()->GetTransformMatrix(); // glm::transpose(playerTransform->GetTranslationMatrix());
+                glm::vec3 forward = transposed[2];
+                shaderProgram.SetUniform(forwardLocation, forward);
             },
             nullptr
                 );
@@ -411,6 +421,8 @@ void SandApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewMatrix");
         filteredUniforms.insert("WorldViewProjMatrix");
         filteredUniforms.insert("desertUV");
+        filteredUniforms.insert("PivotPositon");
+        filteredUniforms.insert("Forward");
 
         // Create material
         m_driveOnSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
@@ -781,16 +793,21 @@ void SandApplication::RenderGUI()
         if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 0.1f))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+            m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
 
         if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.1f, 10.0f))
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+            m_driveOnSandMaterial->SetUniformValue("OffsetStength", m_offsetStength);
         }
 
         if (ImGui::DragFloat("EnableFog", &m_enableFog, 0.1f, 0, 1)) {
             m_deferredMaterial->SetUniformValue("EnableFog", m_enableFog);
         }
+
+        float uv[] = { u, v };
+        ImGui::InputFloat2("UV", uv);
     }
     
 

@@ -18,7 +18,9 @@ uniform mat4 WorldViewProjMatrix; // Converts from world space to clip space
 uniform float OffsetStrength;
 uniform float SampleDistance;
 uniform sampler2D DepthMap;
-uniform vec2 desertUV; // In desert UV space.
+uniform vec3 PivotPosition; // position of pivot in world position
+uniform vec2 DesertUV; // position of pivot in desert UV space.
+uniform vec3 Forward;
 
 void main()
 {
@@ -27,19 +29,58 @@ void main()
 	TexCoord = VertexTexCoord;
 
 	// ------- Vertex position --------
-	
+	// Add the height map sample at the center of the mdoel to every vertex
 	// final vertex position (for opengl rendering, *AND* for lighting)
 	// This is the UV position of the pivot of the player object on the desert. Thus, the same height is retreived for all vertexes.
-	float vertexOffset = GetHeightFromSample(desertUV, DepthMap, SampleDistance, OffsetStrength);
+	float vertexOffset = GetHeightFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength);
 
 	vec3 vertexOffsetVector = vec3(0, -vertexOffset, 0);
 
+	// Also rotate it.
+	// To rotate the object in place, subtract the traslation, add the rotation, add the rotation again.
+	vec3 tangent;
+	vec3 bitangent;
+	vec3 normal;
+	GetTangentSpaceVectorsFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength, tangent, bitangent, normal);
+
+	// Transformation matrix that rotates the player model in the direction of the UV normal.
+	// Hopefully the pivot is in the center of the model...
+	vec3 eye = VertexPosition;
+	vec3 at = VertexPosition + Forward;
+	vec3 up = normal;
+
+	// Calculate rotation matrix values
+	vec3 zaxis = normalize(at - eye);    
+	vec3 xaxis = normalize(cross(zaxis, up));
+	vec3 yaxis = cross(xaxis, zaxis);
+
+	// Right
+	//zaxis = -zaxis;
+
+	// Insert rotation matrix lookat values
+	mat4 rotateInPlaceMatrix = {
+		vec4(xaxis.x, xaxis.y, xaxis.z, dot(xaxis, eye)),
+		vec4(yaxis.x, yaxis.y, yaxis.z, dot(yaxis, eye)),
+		vec4(zaxis.x, zaxis.y, zaxis.z, dot(zaxis, eye)),
+		vec4(0, 0, 0, 1)
+	};
+
+	// Apply rotation matrix to vertex point
+	vec3 rotatedWorldPos = (rotateInPlaceMatrix * vec4(VertexPosition, 0)).xyz;
+
+
+	// Replace VertexPosition with RotatedWorldPos to enable rotation
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
 
-	//vec3 tangent;
-	//vec3 bitangent;
-	//vec3 normal;
-	//GetTangentSpaceVectorsFromSample(desertUV, DepthMap, SampleDistance, OffsetStrength, tangent, bitangent, normal);
+
+
+
+
+
+
+
+	// also rotate normals by the rotation matrix.
+	//TODO
 
 	// Convert normal and tangents from world space to view space
 	ViewTangent = (WorldViewMatrix * vec4(VertexTangent, 0.0)).xyz;
