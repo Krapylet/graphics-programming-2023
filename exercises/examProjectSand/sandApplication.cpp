@@ -115,14 +115,14 @@ void SandApplication::HandlePlayerMovement() {
     
 
     // Find the local directions for the player objects
-    glm::vec3 right, up, forward;
-    // Cut off the 4th row and collumn.
     std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
     glm::mat3 transposed = parentTransform->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
     
-    right = transposed[0];
-    up = transposed[1];
-    forward = transposed[2];
+    // Keeping unsude directions here so i can remember where they are placed.
+    // NB: They are not normalized.
+    glm::vec3 right = transposed[0];
+    glm::vec3 up = transposed[1];
+    glm::vec3 forward = transposed[2];
 
     // Apply speed over time to the translation
     float delta = GetDeltaTime();
@@ -233,7 +233,7 @@ void SandApplication::InitializeLights()
 
 void SandApplication::InitializeMaterials()
 {
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
     // Shadow map material
     {
@@ -403,7 +403,7 @@ void SandApplication::InitializeMaterials()
                 glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
                 glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
                 glm::vec3 desertPosOnDesert = modelPos - desertPos;
-                u = -desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+                u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
                 v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
                 shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
 
@@ -608,14 +608,18 @@ void SandApplication::InitializeModels()
     m_scene.AddSceneNode(parent);
     m_parentModel = parent;
 
-
-
     // Generate ground plane
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength,m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
     m_desertModel = plane;
+
+    // add a second plane to create a circle.
+    std::shared_ptr<SceneModel> underPlane = std::make_shared<SceneModel>("Plane2", planeModel);
+    m_scene.AddSceneNode(underPlane);
+    underPlane->GetTransform()->SetRotation(glm::vec3(3.14, 0, 0));
+
 }
 
 void SandApplication::InitializeFramebuffers()
@@ -814,8 +818,8 @@ void SandApplication::RenderGUI()
             m_deferredMaterial->SetUniformValue("EnableFog", m_enableFog);
         }
 
-        float uv[] = { u, v };
-        ImGui::InputFloat2("UV", uv);
+        ImGui::InputFloat("U", &u);
+        ImGui::InputFloat("V", &v);
     }
     
 

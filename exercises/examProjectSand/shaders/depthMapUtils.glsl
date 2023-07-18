@@ -19,8 +19,8 @@ float GetHeightFromSample(vec2 pos, sampler2D depthMap, float sampleDistance, fl
 	
 	float depthSample = (depthSampleCenter + depthSampleNorth + depthSampleSouth + depthSampleEast + depthSampleWest)/5;
 
-	// We also invert so that darker values are higher.
-	float vertexOffsetIntensity = 1 - depthSample * offsetStrength;
+	// Weigh the depth by the strength.
+	float vertexOffsetIntensity = depthSample * offsetStrength;
 	
 	// apply easing to create an intesting distribution.
 	float easedOffset = Ease(vertexOffsetIntensity);
@@ -51,9 +51,13 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	
 	// this looks more correct than having the constant in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
 	// We're setting the normal length to higher than 1 because the normals generated tend to be extremely tilted on the height map
-	// compared to the weight we're giving each vertex offset. 8 seemed like a good contant value.
+	// compared to the weight we're giving each vertex offset.
+	// These values seem to be a good compromise, removing shadows from most places they shouldn't be, while allowing for shadows near
+	// sharp edges to act as a form of cel shading.
+	// I'm not *really* sure why we have to negate these delta vectors, though. That feels weird. I must have an unnesecary negation
+	// somewhere before this in the pipeline...?
 
-	normal = normalize(vec3(deltaX, 1 + offsetStrength, deltaY));
+	normal = normalize(vec3(-deltaX, 1 / (sampleDistance * sampleDistance + 0.1f) + offsetStrength, -deltaY));
 
 	// we can also use one of the direction pairs to create a tangent
 	tangent = normalize(vec3(northUV, depthSampleNorth) - vec3(southUV, depthSampleNorth));

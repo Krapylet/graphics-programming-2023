@@ -34,7 +34,7 @@ void main()
 	// This is the UV position of the pivot of the player object on the desert. Thus, the same height is retreived for all vertexes.
 	float vertexOffset = GetHeightFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength);
 
-	vec3 vertexOffsetVector = vec3(0, -vertexOffset, 0);
+	vec3 vertexOffsetVector = vec3(0, vertexOffset, 0);
 
 	// Also rotate it.
 	// To rotate the object in place, subtract the traslation, add the rotation, add the rotation again.
@@ -46,7 +46,7 @@ void main()
 	// Transformation matrix that rotates the player model in the direction of the UV normal.
 	// Hopefully the pivot is in the center of the model...
 	vec3 eye = vec3(0,0,0);
-	vec3 at = cross(normalize(Right), normal);
+	vec3 at = cross(normalize(Right), normal);  // Swtiching the order inverts the model on the forward axis.
 	vec3 up = normal;
 
 	// Calculate rotation matrix values
