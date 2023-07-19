@@ -6,10 +6,10 @@ layout (location = 3) in vec3 VertexBitangent;
 layout (location = 4) in vec2 VertexTexCoord;
 
 //Outputs
-out vec3 ViewNormal;
-out vec3 ViewTangent;
-out vec3 ViewBitangent;
-out vec2 TexCoord;
+layout (location = 0) out vec3 ViewNormal;
+layout (location = 1) out vec3 ViewTangent;
+layout (location = 2) out vec3 ViewBitangent;
+layout (location = 3) out vec2 TexCoord;
 
 //Uniforms
 uniform mat4 WorldViewMatrix;

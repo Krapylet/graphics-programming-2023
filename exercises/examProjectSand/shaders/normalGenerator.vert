@@ -1,6 +1,5 @@
 //Inputs
-//All vertex inputs are in model space.
-layout (location = 0) in vec3 VertexPosition;
+layout (location = 0) in vec3 VertexPosition; //All vertex inputs are in model space.
 layout (location = 1) in vec3 VertexNormal;
 layout (location = 2) in vec3 VertexTangent;
 layout (location = 3) in vec3 VertexBitangent;
