@@ -9,6 +9,7 @@ layout (location = 3) in vec2 TexCoord;
 layout (location = 0) out vec4 FragAlbedo;
 layout (location = 1) out vec2 FragNormal;
 layout (location = 2) out vec4 FragOthers;
+// Create another framebuffer for the celshading.
 
 //Uniforms
 uniform vec3 Color;
@@ -17,14 +18,36 @@ uniform sampler2D SpecularTexture;
 
 void main()
 {	
-	FragNormal = ViewNormal.xy;
+
+	// Read normalTexture
+	vec2 normalMap = texture(NormalTexture, TexCoord).xy * 2 - vec2(1);
+
+	// Get implicit Z component
+	vec3 normalTangentSpace = GetImplicitNormal(normalMap);
+	
+	// Create tangent space matrix
+	mat3 tangentMatrix = mat3(ViewTangent, ViewBitangent, ViewNormal);
+
+	// Return matrix in world space
+	vec3 screenSpaceMapNormal = normalize(tangentMatrix * normalTangentSpace);
+
+	// Combine normals with the UDN method to make the normal waves softer and keep 
+	// celshaded edges and to not have shadows on top edges of hills.
+	// UDN could beneficially be modified to 
+	// 1 - Viewnormal.y works well for square scale
+	// Viewnormal.y works well for scaled.
+	float mapWeight = 0;
+	float heightWeight = 1-mapWeight;
+	// height-weighted linear blend: vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
+	vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
+	FragNormal = combinedNormal.xy;
 
 	FragAlbedo = vec4(Color, 1);
 
 	FragOthers = vec4(1,0.5,0,1);
 
 
-		// --------- Mix depth normal and normal map normal  --------
+	// --------- Mix depth normal and normal map normal  --------
 	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
 	// Use a mix and a universal property float to set the how controlling each of them are.
 

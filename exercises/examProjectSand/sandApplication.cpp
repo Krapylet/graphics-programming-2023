@@ -376,7 +376,7 @@ void SandApplication::InitializeMaterials()
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/normalGenerator.frag");
+        fragmentShaderPaths.push_back("shaders/driveOnSand.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -429,7 +429,7 @@ void SandApplication::InitializeMaterials()
         //// Set material uniforms
 
         // Color
-        m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
+        m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(1.0f, 1.0f, 1.0f));  // Sand ground color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
         m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
@@ -489,7 +489,13 @@ void SandApplication::InitializeMaterials()
         
         // Initial depth parameters
         m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);        
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);       
+        
+        // Normal texture
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
+        m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
+
+        m_desertSandMaterial->SetUniformValue("ColorTexture", normalMap);
     }
 
     // Deferred material
@@ -562,7 +568,7 @@ void SandApplication::InitializeModels()
     m_deferredMaterial->SetUniformValue("EnvironmentMaxLod", maxLod);
 
     // Configure loader
-    ModelLoader loader(m_defaultMaterial);
+    ModelLoader loader(m_driveOnSandMaterial);
 
     // Create a new material copy for each submaterial
     loader.SetCreateMaterials(true);
@@ -592,8 +598,9 @@ void SandApplication::InitializeModels()
     int materialCount = cannonModel->GetMaterialCount();
     for (unsigned int i = 0; i < materialCount; i++)
     {
-        cannonModel->SetMaterial(i, m_driveOnSandMaterial);
+        //cannonModel->SetMaterial(i, m_driveOnSandMaterial);
     }
+
 
     m_scene.AddSceneNode(player);
 

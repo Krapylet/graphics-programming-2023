@@ -60,8 +60,8 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	normal = normalize(vec3(-deltaX, 1 / (sampleDistance * sampleDistance + 0.1f) + offsetStrength, -deltaY));
 
 	// we can also use one of the direction pairs to create a tangent
-	tangent = normalize(vec3(northUV, depthSampleNorth) - vec3(southUV, depthSampleNorth));
+	tangent = normalize(vec3(northUV.x, depthSampleNorth, northUV.y) - vec3(southUV.x, depthSampleNorth, southUV.y));
 
 	// And this tangent can be used to compute the bitangent
-	bitangent = normalize(cross(tangent, normal));
+	bitangent = normalize(cross(normal, tangent));
 }
