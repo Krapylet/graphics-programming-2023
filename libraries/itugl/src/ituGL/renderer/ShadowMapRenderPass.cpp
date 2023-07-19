@@ -7,13 +7,14 @@
 #include <ituGL/texture/Texture2DObject.h>
 #include <ituGL/texture/FramebufferObject.h>
 
-ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> material,
-    std::shared_ptr<const Material> exceptionMaterial, std::shared_ptr<const Material> replacemetnMaterial, 
+ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> defaultMaterial,
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> uniqueMaterials,
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> replacementMaterials,
     int drawcallCollectionIndex)
     : m_light(light)
-    , m_material(material)
-    , m_exceptionMaterial(exceptionMaterial)
-    , m_replacementMaterial(exceptionMaterial)
+    , m_material(defaultMaterial)
+    , m_uniqueMaterials(uniqueMaterials)
+    , m_replacementMaterials(replacementMaterials)
     , m_drawcallCollectionIndex(drawcallCollectionIndex)
     , m_volumeCenter(0.0f)
     , m_volumeSize(1.0f)
@@ -80,11 +81,24 @@ void ShadowMapRenderPass::Render()
 
 
         //// Set up object matrix
-        // If the object uses the dessert sand shader, use the custom shadowshader program that retains the vertex offsets.
-        bool drawcallShouldUseReplacementMaterial = drawcallInfo.material.GetShaderProgram() == m_exceptionMaterial->GetShaderProgram();
+        // check if the material uses a non-default shadow material.
+        bool drawcallShouldUseReplacementMaterial = false;
+        int shadowIndex = 0;
+        for (size_t i = 0; i < m_uniqueMaterials->size(); i++)
+        {
+            drawcallShouldUseReplacementMaterial = drawcallInfo.material.GetShaderProgram() == m_uniqueMaterials->at(i)->GetShaderProgram();
+
+            if (drawcallShouldUseReplacementMaterial) {
+                shadowIndex = i;
+                break;
+            }
+        }
+
+        // Use unique material if nessecary 
         if (drawcallShouldUseReplacementMaterial) {
-            m_exceptionMaterial->Use();
-            renderer.UpdateTransforms(m_exceptionMaterial->GetShaderProgram(), drawcallInfo.worldMatrixIndex, first);
+            std::shared_ptr<const Material> replacementMaterial = m_replacementMaterials->at(shadowIndex);
+            replacementMaterial->Use();
+            renderer.UpdateTransforms(replacementMaterial->GetShaderProgram(), drawcallInfo.worldMatrixIndex, first);
             drawcallInfo.drawcall.Draw();
             m_material->Use();
         }
@@ -94,10 +108,7 @@ void ShadowMapRenderPass::Render()
             drawcallInfo.drawcall.Draw();
         }
         
-
         // Render drawcall
-        
-
         first = false;
     }
 

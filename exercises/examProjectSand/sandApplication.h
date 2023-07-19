@@ -65,12 +65,19 @@ private:
     // Materials
     std::shared_ptr<Material> m_defaultMaterial;
     std::shared_ptr<Material> m_deferredMaterial;
-    std::shared_ptr<Material> m_desertSandMaterial;
-    std::shared_ptr<Material> m_desertSandShadowReplacementMaterial;
-    std::shared_ptr<Material> m_driveOnSandMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
     std::shared_ptr<Material> m_bloomMaterial;
+
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_materialsWithUniqueShadows;
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_uniqueShadowMaterials;
+
+    std::shared_ptr<Material> m_desertSandMaterial;
+    std::shared_ptr<Material> m_desertSandShadowMaterial;
+
+    std::shared_ptr<Material> m_driveOnSandMaterial;
+    std::shared_ptr<Material> m_driveOnSandShadowMaterial;
+
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;

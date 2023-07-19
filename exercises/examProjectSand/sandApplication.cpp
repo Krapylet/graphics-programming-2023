@@ -233,9 +233,13 @@ void SandApplication::InitializeLights()
 
 void SandApplication::InitializeMaterials()
 {
+    // Initialize shadow replacement 
+    m_materialsWithUniqueShadows = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
+    m_uniqueShadowMaterials = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
+
     std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
-    // Shadow map material
+    // default shadow map material
     {
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
@@ -275,6 +279,67 @@ void SandApplication::InitializeMaterials()
     }
 
 
+    // Sand material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/normalGenerator.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/normalGenerator.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+        shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+
+        // Create material
+        m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        // Set material uniforms
+
+        // Color
+        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
+
+        // Depth map. Since it's black and white, there's no reason to load more than one channel.
+        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+
+        // Initial depth parameters
+        m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+
+        // Normal texture
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
+        m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
+
+        m_desertSandMaterial->SetUniformValue("ColorTexture", normalMap);
+
+        m_materialsWithUniqueShadows->push_back(m_desertSandMaterial);
+    }
+
     // Shadow map replacement material for the desert sand
     // This allows the desert sand to cast shadows even with modified vertexes.
     {
@@ -313,56 +378,19 @@ void SandApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewProjMatrix");
 
         // Create material
-        m_desertSandShadowReplacementMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        m_desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
 
         // Set material uniforms
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_desertSandShadowReplacementMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
 
         // Initial depth parameters
-        m_desertSandShadowReplacementMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_desertSandShadowReplacementMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+        m_desertSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_desertSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+
+        m_uniqueShadowMaterials->push_back(m_desertSandShadowMaterial);
     }
 
-    // G-buffer material
-    {
-        // Load and build shader
-        std::vector<const char*> vertexShaderPaths;
-        vertexShaderPaths.push_back("shaders/version330.glsl");
-        vertexShaderPaths.push_back("shaders/default.vert");
-        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
-
-        std::vector<const char*> fragmentShaderPaths;
-        fragmentShaderPaths.push_back("shaders/version330.glsl");
-        fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/default.frag");
-        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
-
-        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
-        shaderProgramPtr->Build(vertexShader, fragmentShader);
-
-        // Get transform related uniform locations
-        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
-        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
-
-        // Register shader with renderer
-        m_renderer.RegisterShaderProgram(shaderProgramPtr,
-            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
-            {
-                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
-                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-            },
-            nullptr
-                );
-
-        // Filter out uniforms that are not material properties
-        ShaderUniformCollection::NameSet filteredUniforms;
-        filteredUniforms.insert("WorldViewMatrix");
-        filteredUniforms.insert("WorldViewProjMatrix");
-
-        // Create material
-        m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-    }
 
     // Drive on sand material
     {
@@ -377,6 +405,83 @@ void SandApplication::InitializeMaterials()
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
         fragmentShaderPaths.push_back("shaders/driveOnSand.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+        ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
+        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Right");
+
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+        shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+        glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
+        shaderProgram.SetUniform(objectPivotPositionLocation, modelPos);
+
+        // Calculate the models position on the desert model in UV coordinates.
+        glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+        glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+        glm::vec3 desertPosOnDesert = modelPos - desertPos;
+        u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+        v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+        shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
+
+        // Calculate model right direction direction, so we can cross it with the plane's normal to get the new model forward.
+        glm::mat3 transposed = m_parentModel->GetTransform()->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
+        glm::vec3 right = transposed[0];
+        shaderProgram.SetUniform(forwardLocation, right);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("desertUV");
+        filteredUniforms.insert("PivotPositon");
+        filteredUniforms.insert("Right");
+
+        // Create material
+        m_driveOnSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        //// Set material uniforms
+
+        // Color
+        m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(1.0f, 1.0f, 1.0f));  // Sand ground color
+
+        // Depth map. Since it's black and white, there's no reason to load more than one channel.
+        m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
+
+        // Initial depth parameters
+        m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_driveOnSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+
+        m_materialsWithUniqueShadows->push_back(m_driveOnSandMaterial);
+    }
+
+    // drive on desert shadow material.
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/renderer/empty.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -424,34 +529,32 @@ void SandApplication::InitializeMaterials()
         filteredUniforms.insert("Right");
 
         // Create material
-        m_driveOnSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        m_driveOnSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
 
         //// Set material uniforms
-
-        // Color
-        m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(1.0f, 1.0f, 1.0f));  // Sand ground color
-
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_driveOnSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
 
         // Initial depth parameters
-        m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_driveOnSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+        m_driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+
+        m_uniqueShadowMaterials->push_back(m_driveOnSandShadowMaterial);
     }
 
-    // Sand material
+
+    // G-buffer material
     {
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
         vertexShaderPaths.push_back("shaders/version330.glsl");
-        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
-        vertexShaderPaths.push_back("shaders/normalGenerator.vert");
+        vertexShaderPaths.push_back("shaders/default.vert");
         Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
 
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/normalGenerator.frag");
+        fragmentShaderPaths.push_back("shaders/default.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -477,27 +580,10 @@ void SandApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewProjMatrix");
 
         // Create material
-        m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-
-        // Set material uniforms
-        
-        // Color
-        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
-
-        // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
-        
-        // Initial depth parameters
-        m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);       
-        
-        // Normal texture
-        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
-        m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
-
-        m_desertSandMaterial->SetUniformValue("ColorTexture", normalMap);
+        m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
     }
 
+    
     // Deferred material
     {
         std::vector<const char*> vertexShaderPaths;
@@ -684,7 +770,7 @@ void SandApplication::InitializeRenderer()
             m_mainLight->SetShadowBias(0.01f);
         }
         std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial
-            ,m_desertSandMaterial, m_desertSandShadowReplacementMaterial));
+            ,m_materialsWithUniqueShadows, m_uniqueShadowMaterials));
         // This volume should follow the player to render high quality shadows only near the player.
         shadowMapRenderPass->SetVolume(glm::vec3(-3.0f * m_mainLight->GetDirection()), glm::vec3(30.0f));
         m_renderer.AddRenderPass(std::move(shadowMapRenderPass));
