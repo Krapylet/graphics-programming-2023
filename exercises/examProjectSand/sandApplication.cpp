@@ -652,13 +652,13 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         std::vector<const char*> vertexShaderPaths;
         vertexShaderPaths.push_back("shaders/version330.glsl");
         vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
-        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        vertexShaderPaths.push_back("shaders/prop.vert");
         Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
 
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/driveOnSand.frag");
+        fragmentShaderPaths.push_back("shaders/prop.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -668,8 +668,6 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
         ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
-        ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
-        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Right");
         ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
         ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
 
@@ -682,7 +680,6 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
         shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
         glm::vec3 modelPos = m_propModels->at(0)->GetTransform()->GetTranslation();
-        shaderProgram.SetUniform(objectPivotPositionLocation, modelPos);
 
         // Calculate the models position on the desert model in UV coordinates.
         glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
@@ -695,7 +692,6 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         // Calculate model right direction direction, so we can cross it with the plane's normal to get the new model forward.
         glm::mat3 transposed = m_propModels->at(0)->GetTransform()->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
         glm::vec3 right = transposed[0];
-        shaderProgram.SetUniform(forwardLocation, right);
             },
             nullptr
                 );
@@ -704,9 +700,9 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         ShaderUniformCollection::NameSet filteredUniforms;
         filteredUniforms.insert("WorldViewMatrix");
         filteredUniforms.insert("WorldViewProjMatrix");
-        filteredUniforms.insert("desertUV");
-        filteredUniforms.insert("PivotPositon");
-        filteredUniforms.insert("Right");
+        filteredUniforms.insert("DesertUV");
+        filteredUniforms.insert("OffsetStrength");
+        filteredUniforms.insert("SampleDist");
 
         // Create material
         std::shared_ptr<Material> propMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
@@ -719,7 +715,7 @@ std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
         propMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
-        //m_materialsWithUniqueShadows->push_back(m_driveOnSandMaterial);
+        //m_materialsWithUniqueShadows->push_back(propMaterial);
 
         return propMaterial;
     }
@@ -762,7 +758,7 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/temple-ruin/Temple ruin.obj");
     std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
     m_scene.AddSceneNode(player);
     m_visualPlayerModel = player;
@@ -790,16 +786,12 @@ void SandApplication::InitializeModels()
     m_scene.AddSceneNode(plane);
     m_desertModel = plane;
 
-
-    m_propModels = std::make_shared<std::vector<std::shared_ptr<SceneModel>>>();
     // Load props
-    AddProp("Temple Ruin", "models/temple-ruin/Temple ruin.obj", loader);
+    m_propModels = std::make_shared<std::vector<std::shared_ptr<SceneModel>>>();
+    //AddProp("Temple Ruin", "models/temple-ruin/Temple ruin.obj", loader);
 }
 
 std::shared_ptr<SceneModel> SandApplication::AddProp(const char* objectName, const char* modelPath, ModelLoader loader) {
-
-    // Forward declare the scene model, so that it's information can be used in the material.
-    //std::shared_ptr<SceneModel> sceneModel;
     std::shared_ptr<Material> propMaterial = GeneratePropMaterial();
 
     // Set the generated material as reference, so that object textures are inserted correctly.
