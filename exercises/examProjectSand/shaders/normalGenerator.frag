@@ -25,7 +25,7 @@ void main()
 	// Multiply texcoord with world size to get a tiling texture.
 	float u = mod(TexCoord.x * ObjectSize.x / TileSize, 1);
 	float v = mod(TexCoord.y * ObjectSize.y / TileSize, 1);
-	vec2 normalMap = texture(NormalTexture, vec2(u,v) * 2 - vec2(1);
+	vec2 normalMap = texture(NormalTexture, vec2(u,v)).xy * 2 - vec2(1);
 
 	// Get implicit Z component
 	vec3 normalTangentSpace = GetImplicitNormal(normalMap);

@@ -334,6 +334,10 @@ void SandApplication::InitializeMaterials()
         // Normal texture
         std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
         m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
+        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertWidth, m_desertLength));
+        m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
+
+
 
         m_desertSandMaterial->SetUniformValue("ColorTexture", normalMap);
 
