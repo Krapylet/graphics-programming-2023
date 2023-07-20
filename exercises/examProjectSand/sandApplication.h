@@ -33,6 +33,7 @@ private:
     void InitializeModels();
     void InitializeFramebuffers();
     void InitializeRenderer();
+    std::shared_ptr<SceneModel> AddProp(const char* objectName, const char* modelPath, ModelLoader loader);
 
     std::shared_ptr<Material> CreatePostFXMaterial(const char* fragmentShaderPath, std::shared_ptr<Texture2DObject> sourceTexture = nullptr);
 
@@ -78,6 +79,11 @@ private:
     std::shared_ptr<Material> m_driveOnSandMaterial;
     std::shared_ptr<Material> m_driveOnSandShadowMaterial;
 
+    // Decoration Object materials
+    // The shader program is the same as the driveOnSand material, the uniform properties are assigned different textures
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_propMaterials;
+    std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_propShadowMaterials;
+    
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
@@ -103,6 +109,8 @@ private:
     float m_desertLength = 100;
     float m_desertVertexRows = 100;
     float m_desertVertexCollumns = 100;
+
+
 
     // debug values
     float u;
