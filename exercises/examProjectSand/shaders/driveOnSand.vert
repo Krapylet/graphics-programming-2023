@@ -34,7 +34,7 @@ void main()
 	// This is the UV position of the pivot of the player object on the desert. Thus, the same height is retreived for all vertexes.
 	float vertexOffset = GetHeightFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength);
 
-	vec3 vertexOffsetVector = vec3(0, vertexOffset, 0);
+	vec3 vertexOffsetVector = vec3(0, vertexOffset -0.1f, 0);
 
 	// Also rotate it.
 	// To rotate the object in place, subtract the traslation, add the rotation, add the rotation again.

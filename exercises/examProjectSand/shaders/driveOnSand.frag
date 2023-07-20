@@ -24,5 +24,6 @@ void main()
 
 	// hardcode metal metalness etc. since we don't have a texture for that.
 	// ambientOcclusion, metalness, roughness, 
-	FragOthers = vec4(0, 0.8f, 0.3f, 0);
+	//FragOthers = vec4(0, 0.8f, 0.3f, 0); Good base values
+	FragOthers = texture(SpecularTexture, TexCoord);
 }
