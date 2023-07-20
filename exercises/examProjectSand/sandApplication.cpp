@@ -166,7 +166,7 @@ void SandApplication::MakeCameraFollowPlayer() {
     camera->GetCamera()->ExtractVectors(right, up, forward);
 
     // Now we can move the camera back and a bit up to get the player model in frame
-    translation += (forward + up / 3.0f) * m_cameraPlayerDistance;
+    translation += (forward + up / 3.0f) * m_cameraPlayerDistance + up * m_offsetStength/2.0f;
     cameraTransform->SetTranslation(translation);
 
     // Lastly, make the actual camera viewport update according to the transform changes.
@@ -420,12 +420,15 @@ void SandApplication::InitializeMaterials()
         ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
         ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
         ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Right");
-
+        ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
+        ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
             [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
             {
+                shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStength);
+                shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
         shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
         glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
@@ -465,10 +468,6 @@ void SandApplication::InitializeMaterials()
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
         m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
-
-        // Initial depth parameters
-        m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_driveOnSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
 
         m_materialsWithUniqueShadows->push_back(m_driveOnSandMaterial);
     }
@@ -893,7 +892,8 @@ void SandApplication::RenderGUI()
 
     if (auto window = m_imGui.UseWindow("Shader Uniforms"))
     {
-        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 0.1f))
+        // For some reason Setting sampleDistance and OffsetDistance has no effect on the driveOnSand material, but it does on the shadow version...
+        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.001f, 0.0f, 0.1f))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
             m_desertSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
@@ -901,7 +901,7 @@ void SandApplication::RenderGUI()
             m_driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
 
-        if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.1f, 10.0f))
+        if (ImGui::DragFloat("Offset strength", &m_offsetStength,0.1f, 0.0f, 10.0f))
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
             m_desertSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
