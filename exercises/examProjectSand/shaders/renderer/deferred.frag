@@ -55,11 +55,12 @@ void main()
 	float ndc = depth * 2.0 - 1.0; 
 	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));
 	// Now that we have the linear depth, we can then transform it to a gradual easing
-	float powerDepth = linearDepth * linearDepth;
+	linearDepth /= 10;
+	float powerDepth = linearDepth * linearDepth * linearDepth;
 
 	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
 	powerDepth -= 0.1f;
-	powerDepth = max(0, powerDepth);
+	powerDepth = max(0.1f, powerDepth);
 
 	
 	// Add uniform bool/int multiplied to powerDepth to enable/disable fog during playtest.

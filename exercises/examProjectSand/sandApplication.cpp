@@ -237,7 +237,7 @@ void SandApplication::InitializeMaterials()
     m_materialsWithUniqueShadows = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
     m_uniqueShadowMaterials = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
 
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest2.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
     // default shadow map material
     {
@@ -680,7 +680,7 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/Jeep_done.fbx");
     std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
 
     // Replace the default model material with the special material that offsets vertex positions by the height map.
@@ -698,7 +698,7 @@ void SandApplication::InitializeModels()
     // The parent framework doesn't look like it's done, so Instead I'm doing a quick and dirty hack to emulate an empty parent of the
     // camera and the player visual model.
     // there's probably techinaclly a memory leak here, but i don't think i have time to fix it. It's small anyway.
-    std::shared_ptr<Model> debugCanonModel(loader.LoadNew("models/cannon/cannon.obj"));
+    std::shared_ptr<Model> debugCanonModel(loader.LoadNew("models/Jeep_done.fbx"));
     std::shared_ptr<SceneModel> parent = std::make_shared<SceneModel>("parent", debugCanonModel);
     parent->GetTransform()->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
     m_scene.AddSceneNode(parent);
