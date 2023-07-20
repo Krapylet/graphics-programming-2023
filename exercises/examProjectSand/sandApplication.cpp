@@ -237,7 +237,7 @@ void SandApplication::InitializeMaterials()
     m_materialsWithUniqueShadows = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
     m_uniqueShadowMaterials = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
 
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest2.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest2.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
     // default shadow map material
     {
@@ -325,7 +325,7 @@ void SandApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.15f, 0.06f, 0.01f));  // Sand ground color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
         // Initial depth parameters
         m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
@@ -386,7 +386,7 @@ void SandApplication::InitializeMaterials()
 
         // Set material uniforms
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_desertSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
         // Initial depth parameters
         m_desertSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
@@ -467,7 +467,7 @@ void SandApplication::InitializeMaterials()
         m_driveOnSandMaterial->SetUniformValue("Color", glm::vec3(1.0f, 1.0f, 1.0f));  // Sand ground color
 
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_driveOnSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_driveOnSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
         m_materialsWithUniqueShadows->push_back(m_driveOnSandMaterial);
     }
@@ -536,7 +536,7 @@ void SandApplication::InitializeMaterials()
 
         //// Set material uniforms
         // Depth map. Since it's black and white, there's no reason to load more than one channel.
-        m_driveOnSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_driveOnSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
         // Initial depth parameters
         m_driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
@@ -544,6 +544,9 @@ void SandApplication::InitializeMaterials()
 
         m_uniqueShadowMaterials->push_back(m_driveOnSandShadowMaterial);
     }
+
+    // Prop material ( Needs to be complied individually for each prop)
+    
 
 
     // G-buffer material
@@ -643,6 +646,85 @@ void SandApplication::InitializeMaterials()
     }
 }
 
+std::shared_ptr<Material> SandApplication::GeneratePropMaterial() {
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/driveOnSand.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location objectUVPositionLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+        ShaderProgram::Location objectPivotPositionLocation = shaderProgramPtr->GetUniformLocation("PivotPosition");
+        ShaderProgram::Location forwardLocation = shaderProgramPtr->GetUniformLocation("Right");
+        ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
+        ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStength);
+        shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
+        shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+        shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+        glm::vec3 modelPos = m_propModels->at(0)->GetTransform()->GetTranslation();
+        shaderProgram.SetUniform(objectPivotPositionLocation, modelPos);
+
+        // Calculate the models position on the desert model in UV coordinates.
+        glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+        glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+        glm::vec3 desertPosOnDesert = modelPos - desertPos;
+        u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+        v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+        shaderProgram.SetUniform(objectUVPositionLocation, glm::vec2(u, v));
+
+        // Calculate model right direction direction, so we can cross it with the plane's normal to get the new model forward.
+        glm::mat3 transposed = m_propModels->at(0)->GetTransform()->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
+        glm::vec3 right = transposed[0];
+        shaderProgram.SetUniform(forwardLocation, right);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("desertUV");
+        filteredUniforms.insert("PivotPositon");
+        filteredUniforms.insert("Right");
+
+        // Create material
+        std::shared_ptr<Material> propMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+
+        //// Set material uniforms
+
+        // Color
+        propMaterial->SetUniformValue("Color", glm::vec3(1.0f, 1.0f, 1.0f));  // Sand ground color
+
+        // Depth map. Since it's black and white, there's no reason to load more than one channel.
+        propMaterial->SetUniformValue("DepthMap", m_displacementMap);
+
+        //m_materialsWithUniqueShadows->push_back(m_driveOnSandMaterial);
+
+        return propMaterial;
+    }
+}
+
 void SandApplication::InitializeModels()
 {
     m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/DesertSkybox.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
@@ -680,7 +762,7 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/temple-ruin/Temple ruin.obj");
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
     m_scene.AddSceneNode(player);
     m_visualPlayerModel = player;
@@ -709,13 +791,27 @@ void SandApplication::InitializeModels()
     m_desertModel = plane;
 
 
-
+    m_propModels = std::make_shared<std::vector<std::shared_ptr<SceneModel>>>();
     // Load props
-
+    AddProp("Temple Ruin", "models/temple-ruin/Temple ruin.obj", loader);
 }
 
-std::shared_ptr<SceneModel> SandApplication::AddProp(const char* objectName, const char* modelPath) {
+std::shared_ptr<SceneModel> SandApplication::AddProp(const char* objectName, const char* modelPath, ModelLoader loader) {
 
+    // Forward declare the scene model, so that it's information can be used in the material.
+    //std::shared_ptr<SceneModel> sceneModel;
+    std::shared_ptr<Material> propMaterial = GeneratePropMaterial();
+
+    // Set the generated material as reference, so that object textures are inserted correctly.
+    loader.SetReferenceMaterial(propMaterial);
+    std::shared_ptr<Model> model = loader.LoadShared(modelPath);
+    std::shared_ptr<SceneModel> sceneModel = std::make_shared<SceneModel>(objectName, model);
+    m_propModels->push_back(sceneModel);
+
+    // add prop to scene.
+    m_scene.AddSceneNode(m_propModels->at(0));
+
+    return m_propModels->at(0);
 }
 
 void SandApplication::InitializeFramebuffers()

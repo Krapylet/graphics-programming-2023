@@ -9,6 +9,7 @@
 #include <ituGL/camera/CameraController.h>
 #include <ituGL/utils/DearImGui.h>
 #include <array>
+#include <ituGL/asset/ModelLoader.h>
 
 class Texture2DObject;
 class TextureCubemapObject;
@@ -34,6 +35,7 @@ private:
     void InitializeFramebuffers();
     void InitializeRenderer();
     std::shared_ptr<SceneModel> AddProp(const char* objectName, const char* modelPath, ModelLoader loader);
+    std::shared_ptr<Material> GeneratePropMaterial();
 
     std::shared_ptr<Material> CreatePostFXMaterial(const char* fragmentShaderPath, std::shared_ptr<Texture2DObject> sourceTexture = nullptr);
 
@@ -84,6 +86,9 @@ private:
     std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_propMaterials;
     std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_propShadowMaterials;
     
+    // Prop stuff
+    std::shared_ptr<std::vector<std::shared_ptr<SceneModel>>> m_propModels;
+
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
@@ -102,6 +107,7 @@ private:
 
     // Desert stuff.
     std::shared_ptr<SceneModel> m_desertModel;
+    std::shared_ptr<Texture2DObject> m_displacementMap;
     float m_sampleDistance = 0.2f;
     float m_offsetStength = 2.0f;
     float m_enableFog = 0.0f;
