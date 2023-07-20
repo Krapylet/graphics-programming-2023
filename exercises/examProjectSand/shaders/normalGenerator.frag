@@ -15,12 +15,17 @@ layout (location = 2) out vec4 FragOthers;
 uniform vec3 Color;
 uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
+uniform vec2 ObjectSize; // world size of the two lengths of the plane
+uniform float TileSize;
 
 void main()
 {	
 
 	// Read normalTexture
-	vec2 normalMap = texture(NormalTexture, TexCoord).xy * 2 - vec2(1);
+	// Multiply texcoord with world size to get a tiling texture.
+	float u = mod(TexCoord.x * ObjectSize.x / TileSize, 1);
+	float v = mod(TexCoord.y * ObjectSize.y / TileSize, 1);
+	vec2 normalMap = texture(NormalTexture, vec2(u,v) * 2 - vec2(1);
 
 	// Get implicit Z component
 	vec3 normalTangentSpace = GetImplicitNormal(normalMap);

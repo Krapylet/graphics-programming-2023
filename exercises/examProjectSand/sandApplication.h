@@ -99,8 +99,8 @@ private:
     float m_sampleDistance = 0.2f;
     float m_offsetStength = 2.0f;
     float m_enableFog = 0.0f;
-    float m_desertWidth = 10;
-    float m_desertLength = 10;
+    float m_desertWidth = 100;
+    float m_desertLength = 100;
     float m_desertVertexRows = 100;
     float m_desertVertexCollumns = 100;
 

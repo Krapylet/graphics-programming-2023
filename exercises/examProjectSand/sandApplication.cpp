@@ -237,7 +237,7 @@ void SandApplication::InitializeMaterials()
     m_materialsWithUniqueShadows = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
     m_uniqueShadowMaterials = std::make_shared<std::vector<std::shared_ptr<const Material>>>();
 
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
 
     // default shadow map material
     {
@@ -707,12 +707,6 @@ void SandApplication::InitializeModels()
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
     m_desertModel = plane;
-
-    // add a second plane to create a circle.
-    std::shared_ptr<SceneModel> underPlane = std::make_shared<SceneModel>("Plane2", planeModel);
-    m_scene.AddSceneNode(underPlane);
-    underPlane->GetTransform()->SetRotation(glm::vec3(3.14, 0, 0));
-
 }
 
 void SandApplication::InitializeFramebuffers()
@@ -898,13 +892,17 @@ void SandApplication::RenderGUI()
         if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.0f, 0.0001f, 0.1f))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+            m_desertSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
             m_driveOnSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+            m_driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
 
         if (ImGui::DragFloat("Offset strength", &m_offsetStength, 0.0f, 0.1f, 10.0f))
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
-            m_driveOnSandMaterial->SetUniformValue("OffsetStength", m_offsetStength);
+            m_desertSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+            m_driveOnSandMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
+            m_driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStength);
         }
 
         if (ImGui::DragFloat("EnableFog", &m_enableFog, 0.1f, 0, 1)) {
