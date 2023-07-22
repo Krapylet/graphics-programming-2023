@@ -17,6 +17,9 @@ public:
         std::shared_ptr<std::vector<std::shared_ptr<const Material>>> replacementMaterials,
         int drawcallCollectionIndex = 0);
 
+    ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> defaultMaterial,
+        int drawcallCollectionIndex = 0);
+
     void SetVolume(glm::vec3 volumeCenter, glm::vec3 volumeSize);
 
     void Render() override;

@@ -22,6 +22,19 @@ ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shar
     InitFramebuffer();
 }
 
+ShadowMapRenderPass::ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> defaultMaterial,
+    int drawcallCollectionIndex)
+    : m_light(light)
+    , m_material(defaultMaterial)
+    , m_uniqueMaterials(nullptr)
+    , m_replacementMaterials(nullptr)
+    , m_drawcallCollectionIndex(drawcallCollectionIndex)
+    , m_volumeCenter(0.0f)
+    , m_volumeSize(1.0f)
+{
+    InitFramebuffer();
+}
+
 void ShadowMapRenderPass::SetVolume(glm::vec3 volumeCenter, glm::vec3 volumeSize)
 {
     m_volumeCenter = volumeCenter;
@@ -78,6 +91,14 @@ void ShadowMapRenderPass::Render()
         // Bind the vao
         drawcallInfo.vao.Bind();
 
+
+        // if no unique materials are defined, use the default one.
+        if (m_uniqueMaterials == nullptr) {
+            renderer.UpdateTransforms(shaderProgram, drawcallInfo.worldMatrixIndex, first);
+            drawcallInfo.drawcall.Draw();
+            first = false;
+            continue;
+        }
 
 
         //// Set up object matrix
