@@ -293,6 +293,11 @@ void PostFXSceneViewerApplication::InitializeModels()
     // Load models
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
+
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1 , 1, 10, 10);
+    planeModel->AddMaterial(m_defaultMaterial);
+    std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
+    m_scene.AddSceneNode(plane);
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()

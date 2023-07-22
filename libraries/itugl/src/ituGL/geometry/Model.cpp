@@ -121,7 +121,7 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
         {
             glm::vec3 tangent = glm::vec3(0, 0, 1);
             glm::vec3 bitangent = glm::vec3(1, 0, 0);
-            glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
+            glm::vec3 normal = glm::normalize(glm::cross(tangent, bitangent));
 
             // 4.1 Calculate position
             // Subtract half lengt/width to create pivot at center.
