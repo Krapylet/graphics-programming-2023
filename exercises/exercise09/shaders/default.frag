@@ -26,7 +26,7 @@ void main()
 	vec3 viewNormal = SampleNormalMap(NormalTexture, TexCoord, normalize(ViewNormal), normalize(ViewTangent), normalize(ViewBitangent));
 	FragNormal = ViewNormal.xy;
 
-	FragAlbedo = vec4(ViewNormal.xy, 0,1);
+	//FragAlbedo = vec4(ViewNormal.xy, 0,1);
 
 	// ambientOcclusion, metalness, roughness, unused,
 	FragOthers = vec4(1, 1, 0, 0); //texture(SpecularTexture, TexCoord);

@@ -217,7 +217,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         std::vector<const char*> fragmentShaderPaths;
         fragmentShaderPaths.push_back("shaders/version330.glsl");
         fragmentShaderPaths.push_back("shaders/utils.glsl");
-        fragmentShaderPaths.push_back("shaders/default.frag");
+        fragmentShaderPaths.push_back("shaders/normalGenerator.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
         std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
@@ -246,7 +246,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
 
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
@@ -254,9 +254,11 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
         m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
-
-        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
+
+        // can maybe take scale into account as well if scale in multiplied in here.
+        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
+        
     }
 
     // Deferred material
