@@ -111,7 +111,7 @@ void PostFXSceneViewerApplication::InitializeLights()
 {
     // Create a directional light and add it to the scene
     std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
-    directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -3.14f)); // It will be normalized inside the function
+    directionalLight->SetDirection(m_lightDirection); // It will be normalized inside the function
     directionalLight->SetIntensity(3.0f);
     m_scene.AddSceneNode(std::make_shared<SceneLight>("directional light", directionalLight));
 
@@ -226,6 +226,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Get transform related uniform locations
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location maxReflectionDirectionLocation = shaderProgramPtr->GetUniformLocation("MaxReflectionDirection");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -233,6 +234,13 @@ void PostFXSceneViewerApplication::InitializeMaterials()
             {
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+                
+                // This calculation is a little inaccurate, as it doesn't take into account that this angle will be different the further
+                // near the edge of the screen.
+                glm::vec3 right; glm::vec3 up; glm::vec3 forward;
+                camera.ExtractVectors(right, up, forward);
+                glm::vec3 maxReflrectionDirection = glm::normalize(glm::mix(glm::normalize(glm::vec3(1,1,1)), glm::normalize(m_lightDirection), 0.5f));
+                shaderProgram.SetUniform(maxReflectionDirectionLocation, maxReflrectionDirection);
             },
             nullptr
                 );
@@ -253,15 +261,18 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
         m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
+        m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
+        m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
+
         
         // load textures
         std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
-        std::shared_ptr<Texture2DObject> noiseTexture = Texture2DLoader::LoadTextureShared("textures/PixelNoise.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16, true, false);
+        std::shared_ptr<Texture2DObject> noiseTexture = Texture2DLoader::LoadTextureShared("textures/PixelNoise.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16);
         m_desertSandMaterial->SetUniformValue("NoiseTexture", noiseTexture);
 
-        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16, true, false);
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16);
         m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
 
 
@@ -574,9 +585,13 @@ void PostFXSceneViewerApplication::RenderGUI()
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
-        if (ImGui::DragFloat("NoiseStrength", &m_noiseStrength, 0.1f, -10, 10))
+        if (ImGui::DragFloat("NoiseStrength", &m_noiseStrength, 0.1f, -1, 1))
         {
             m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
+        }
+        if (ImGui::DragFloat("NoiseTileFrequency", &m_noiseTilefrequency, 0.1f, 0, 10))
+        {
+            m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
         }
 
     }

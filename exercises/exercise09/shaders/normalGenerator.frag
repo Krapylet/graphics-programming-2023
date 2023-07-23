@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 ViewNormal;
 layout (location = 1) in vec3 ViewTangent;
 layout (location = 2) in vec3 ViewBitangent;
-layout (location = 3) in vec3 WorldNormal; // Fragment normal in world(?) space.
+layout (location = 3) in vec3 WorldNormal; // Fragment normal in world(?) space. THis values isn't in tangent space, and causes a bug when mixed with the normalMap.
 layout (location = 4) in vec2 TexCoord;
 
 //Outputs
@@ -18,9 +18,11 @@ uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
 uniform sampler2D NoiseTexture;
 uniform float NoiseStrength;
+uniform float NoiseTileFrequency;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform float TileSize;
 uniform mat4 WorldViewMatrix; // converts from world space to view space
+
 
 
 void main()
@@ -46,32 +48,23 @@ void main()
 	// - Since Y is the "up" direction, we switch that with z in the formular.
 	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + WorldNormal.x, WorldNormal.y, normalTangentSpace.z + WorldNormal.z));
 
-	// add pixel noise to the normal.
-	// - We only change the "up" value, making the sand grains more likely to turn in a more/less extreme direction of their current tilt.
+	// add pixel noise to the normal. We do this by genrating random vector and lerping randomly towards it.
 	// - We sample with the UV to make each fragment sample from the same noise value each frame. That way we should get temporal consitency rather than random flickering.
-	// - Noise is sampled such that grey is 0, white is 1 and black is -1.
-	float noise = texture(NoiseTexture, vec2(u*2,v*2)).x * 2 - 1;
+	// - Usually you would sample the noise such that grey is 0, white is 1 and black is -1.
+	// - We take the power of the texture to get a more grainy texture as pr the journy GDC talk.
+	float noiseX = pow(texture(NoiseTexture, vec2(u,v) * NoiseTileFrequency).x, 2.0) * 2 - 1;
+	float noiseZ = pow(texture(NoiseTexture, vec2(v,u) * NoiseTileFrequency).x, 2.0) * 2 - 1;
+	float noiseY = pow(texture(NoiseTexture, vec2((u+v),(u-v)) * NoiseTileFrequency).x, 2.0) * 2 - 1;
+	float noiseW = pow(texture(NoiseTexture, vec2((u-v),(u+v)) * NoiseTileFrequency).x, 2.0) * 2 - 1;
+	vec3 randomDir = normalize(vec3(noiseX, noiseY, noiseZ));
+	vec3 noisedTangentSpaceNormal = mix(combinedTangentSpaceNormal, randomDir, NoiseStrength * noiseW);
 
-	combinedTangentSpaceNormal =  normalize(vec3(combinedTangentSpaceNormal.x, combinedTangentSpaceNormal.y + noise * NoiseStrength, combinedTangentSpaceNormal.z));
+	// get noised normal in view space
+	vec3 noisedViewNormal = normalize(WorldViewMatrix * vec4(noisedTangentSpaceNormal,0)).xyz;
 
-	// get normal in view space
-	vec3 screenSpaceMapNormal = normalize(WorldViewMatrix * vec4(combinedTangentSpaceNormal,0)).xyz;
-
-	FragNormal = screenSpaceMapNormal.xy;
+	FragNormal = noisedViewNormal.xy;
 
 	FragAlbedo = vec4(Color, 1);
 
 	FragOthers = vec4(1,0.5,0,1);
-
-
-	// --------- Mix depth normal and normal map normal  --------
-	// Sample the normal map for the smaller sand waves and mix them together with the normals from the depth map.
-	// Use a mix and a universal property float to set the how controlling each of them are.
-
-	// How do you make these variable names meaningfull while keeping them from becomming absolute gibberish???
-	// vec3 normalMapTangetSpaceNormal = texture(NormalMap, VertexTexCoord).rgb * 2 - 1;
-	// REmember to cconvert form 0-1 to -1 - 1
-
-	// Combine normals with the UDN method
-	// vec3 combinedNormal =  normalize(float3(n1.xy + n2.xy, n1.z));	
 }

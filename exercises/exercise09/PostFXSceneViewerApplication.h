@@ -74,13 +74,17 @@ private:
     float m_sampleDistance= 0;
     float m_offsetStrength = 0;
 
+    // Light values
+    glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -3.14f);
+
     // Desert values
     float m_tileSize = 10;
     float m_desertWidth = 10;
     float m_desertLength = 10;
     float m_desertVertexRows = 100;
     float m_desertVertexCollumns = 100;
-    float m_noiseStrength = 1;
+    float m_noiseStrength = 0.15f;
+    float m_noiseTilefrequency = 2;
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
