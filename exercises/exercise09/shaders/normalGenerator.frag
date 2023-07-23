@@ -35,6 +35,9 @@ void main()
 	// convert normal map to world space. The fact that we have to do this conversion really feels like a bug. I must be doing something wrong somethere in the stack.
 	normalTangentSpace = vec3(normalTangentSpace.x, normalTangentSpace.z, -normalTangentSpace.y);
 
+	// Divide the normals size to make the height map more pronounced.
+	normalTangentSpace /= 10;
+
 	// Combine depth map normal and normal map normal in tangent space using UDN:
 	// Since Y is the "up" direction, we switch that with z in the formular.
 	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + TangentNormal.x, TangentNormal.y, normalTangentSpace.z + TangentNormal.z));
