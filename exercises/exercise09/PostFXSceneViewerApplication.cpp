@@ -246,7 +246,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
 
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
@@ -556,7 +556,7 @@ void PostFXSceneViewerApplication::RenderGUI()
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
         }
-        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.1f, 0, 1))
+        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0, 1))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
