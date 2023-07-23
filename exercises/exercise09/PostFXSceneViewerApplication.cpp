@@ -26,6 +26,8 @@
 #include <ituGL/scene/ImGuiSceneVisitor.h>
 #include <imgui.h>
 
+#include <ituGL/scene/Transform.h>
+
 PostFXSceneViewerApplication::PostFXSceneViewerApplication()
     : Application(1024, 1024, "Post FX Scene Viewer demo")
     , m_renderer(GetDevice())
@@ -202,6 +204,58 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_defaultMaterial->SetUniformValue("Color", glm::vec3(1.0f));
     }
 
+
+    // Sand deformation shader
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/normalGenerator.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/default.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+
+        // Create material
+        m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
+
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
+        m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
+        m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
+        m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
+        m_desertSandMaterial->SetUniformValue("Unused", m_unused);
+    }
+
     // Deferred material
     {
         std::vector<const char*> vertexShaderPaths;
@@ -294,10 +348,11 @@ void PostFXSceneViewerApplication::InitializeModels()
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1 , 1, 10, 10);
-    planeModel->AddMaterial(m_defaultMaterial);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1 , 1, 100, 100);
+    planeModel->AddMaterial(m_desertSandMaterial);
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
+    plane->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
@@ -474,6 +529,39 @@ void PostFXSceneViewerApplication::RenderGUI()
 
     // Draw GUI for camera controller
     m_cameraController.DrawGUI(m_imGui);
+
+    if (auto window = m_imGui.UseWindow("Desert sand uniforms"))
+    {
+        if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+            m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        }
+        if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
+            m_defaultMaterial->SetUniformValue("Metalness", m_metalness);
+        }
+        if (ImGui::DragFloat("Roughness", &m_roughness, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
+            m_defaultMaterial->SetUniformValue("Roughness", m_roughness);
+        }
+        if (ImGui::DragFloat("Unused", &m_unused, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("Unused", m_unused);
+            m_defaultMaterial->SetUniformValue("Unused", m_unused);
+        }
+        if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+        }
+        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.1f, 0, 1))
+        {
+            m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        }
+
+    }
 
     if (auto window = m_imGui.UseWindow("Post FX"))
     {

@@ -14,6 +14,10 @@ uniform vec3 Color;
 uniform sampler2D ColorTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
+uniform float AmbientOcclusion;
+uniform float Metalness;
+uniform float Roughness;
+uniform float Unused;
 
 void main()
 {
@@ -24,5 +28,6 @@ void main()
 
 	FragAlbedo = vec4(ViewNormal.xy, 0,1);
 
-	FragOthers = vec4(0.5f, 0.8f, 0.3f, 0); //texture(SpecularTexture, TexCoord);
+	// ambientOcclusion, metalness, roughness, unused,
+	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, Unused); //texture(SpecularTexture, TexCoord);
 }

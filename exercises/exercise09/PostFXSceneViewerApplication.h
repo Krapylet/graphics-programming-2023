@@ -64,6 +64,15 @@ private:
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
     std::shared_ptr<Material> m_bloomMaterial;
+    std::shared_ptr<Material> m_desertSandMaterial;
+
+    // debug values for materials.
+    float m_ambientOcclusion = 1;
+    float m_metalness = 1;
+    float m_roughness = 0;
+    float m_unused = 0;
+    float m_sampleDistance= 0;
+    float m_offsetStrength = 0;
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
