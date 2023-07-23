@@ -108,6 +108,7 @@ private:
     // Desert stuff.
     std::shared_ptr<SceneModel> m_desertModel;
     std::shared_ptr<Texture2DObject> m_displacementMap;
+    float m_tileSize = 10;
     float m_sampleDistance = 0.2f;
     float m_offsetStength = 2.0f;
     float m_enableFog = 0.0f;

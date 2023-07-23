@@ -23,18 +23,18 @@ void main()
 
 	// Read normalTexture
 	// Multiply texcoord with world size to get a tiling texture.
-	//float u = mod(TexCoord.x * ObjectSize.x / TileSize, 1);
-	//float v = mod(TexCoord.y * ObjectSize.y / TileSize, 1);
-	//vec2 normalMap = texture(NormalTexture, vec2(u,v)).xy * 2 - vec2(1);
+	float u = mod(TexCoord.x * TileSize, 1);
+	float v = mod(TexCoord.y * TileSize, 1);
+	vec2 normalMap = texture(NormalTexture, vec2(u,v)).xy * 2 - vec2(1);
 
 	// Get implicit Z component
-	//vec3 normalTangentSpace = GetImplicitNormal(normalMap);
+	vec3 normalTangentSpace = GetImplicitNormal(normalMap);
 	
 	// Create tangent space matrix
-	//mat3 tangentMatrix = mat3(ViewTangent, ViewBitangent, ViewNormal);
+	mat3 tangentMatrix = mat3(ViewTangent, ViewBitangent, ViewNormal);
 
 	// Return matrix in world space
-	//vec3 screenSpaceMapNormal = normalize(tangentMatrix * normalTangentSpace);
+	vec3 screenSpaceMapNormal = normalize(tangentMatrix * normalTangentSpace);
 
 	// Combine normals with the UDN method to make the normal waves softer and keep 
 	// celshaded edges and to not have shadows on top edges of hills.
@@ -42,8 +42,8 @@ void main()
 	// 1 - Viewnormal.y works well for square scale
 	// Viewnormal.y works well for scaled.
 	// height-weighted linear blend: vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
-	//vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
-	FragNormal = ViewNormal.xy;
+	vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
+	FragNormal = combinedNormal.xy;
 
 	FragAlbedo = vec4(Color, 1);
 

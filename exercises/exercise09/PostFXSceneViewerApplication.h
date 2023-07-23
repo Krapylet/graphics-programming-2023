@@ -75,6 +75,7 @@ private:
     float m_offsetStrength = 0;
 
     // Desert values
+    float m_tileSize = 10;
     float m_desertWidth = 10;
     float m_desertLength = 10;
     float m_desertVertexRows = 100;

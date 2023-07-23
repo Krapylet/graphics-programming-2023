@@ -255,6 +255,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
+        m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
+        m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
 
         // can maybe take scale into account as well if scale in multiplied in here.
         m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
