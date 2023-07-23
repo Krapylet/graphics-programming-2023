@@ -370,7 +370,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::SpecularTexture, "SpecularTexture");
 
     // Load models
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/arch/arch.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength , m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
