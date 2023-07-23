@@ -3,7 +3,8 @@
 layout (location = 0) in vec3 ViewNormal;
 layout (location = 1) in vec3 ViewTangent;
 layout (location = 2) in vec3 ViewBitangent;
-layout (location = 3) in vec2 TexCoord;
+layout (location = 3) in vec3 TangentNormal;
+layout (location = 4) in vec2 TexCoord;
 
 //Outputs
 layout (location = 0) out vec4 FragAlbedo;
@@ -17,6 +18,7 @@ uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform float TileSize;
+uniform mat4 WorldViewMatrix; // converts from world space to view space
 
 void main()
 {	
@@ -29,12 +31,16 @@ void main()
 
 	// Get implicit Z component
 	vec3 normalTangentSpace = GetImplicitNormal(normalMap);
-	
-	// Create tangent space matrix
-	mat3 tangentMatrix = mat3(ViewTangent, ViewBitangent, ViewNormal);
 
-	// Return matrix in world space
-	vec3 screenSpaceMapNormal = normalize(tangentMatrix * normalTangentSpace);
+	// convert normal map to world space. The fact that we have to do this conversion really feels like a bug. I must be doing something wrong somethere in the stack.
+	normalTangentSpace = vec3(normalTangentSpace.x, normalTangentSpace.z, -normalTangentSpace.y);
+
+	// Combine depth map normal and normal map normal in tangent space using UDN:
+	// Since Y is the "up" direction, we switch that with z in the formular.
+	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + TangentNormal.x, TangentNormal.y, normalTangentSpace.z + TangentNormal.z));
+
+	// Return normal in view space
+	vec3 screenSpaceMapNormal = normalize(WorldViewMatrix * vec4(combinedTangentSpaceNormal,0)).xyz;
 
 	// Combine normals with the UDN method to make the normal waves softer and keep 
 	// celshaded edges and to not have shadows on top edges of hills.
@@ -42,8 +48,7 @@ void main()
 	// 1 - Viewnormal.y works well for square scale
 	// Viewnormal.y works well for scaled.
 	// height-weighted linear blend: vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
-	vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
-	FragNormal = combinedNormal.xy;
+	FragNormal = screenSpaceMapNormal.xy;
 
 	FragAlbedo = vec4(Color, 1);
 

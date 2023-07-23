@@ -246,7 +246,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
 
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
@@ -256,7 +256,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
         m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
-        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB8, true, false);
+        std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16, true, false);
         m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
 
         // can maybe take scale into account as well if scale in multiplied in here.

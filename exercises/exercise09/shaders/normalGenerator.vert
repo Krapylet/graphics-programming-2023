@@ -9,7 +9,8 @@ layout (location = 4) in vec2 VertexTexCoord;
 layout (location = 0) out vec3 ViewNormal;
 layout (location = 1) out vec3 ViewTangent;
 layout (location = 2) out vec3 ViewBitangent;
-layout (location = 3) out vec2 TexCoord;   // UV
+layout (location = 3) out vec3 TangentNormal;
+layout (location = 4) out vec2 TexCoord;   // UV
 
 //Uniforms
 uniform mat4 WorldViewMatrix; // converts from world space to view space
@@ -44,5 +45,5 @@ void main()
 	ViewBitangent = (WorldViewMatrix * vec4(bitangent, 0.0)).xyz;
 	ViewNormal = (WorldViewMatrix * vec4(normal, 0.0)).xyz;
 
-	// Move Sample Distance to method paramter.
+	TangentNormal = normal;
 }
