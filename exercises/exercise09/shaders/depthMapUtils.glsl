@@ -29,7 +29,7 @@ float GetHeightFromSample(vec2 pos, sampler2D depthMap, float sampleDistance, fl
 	return easedOffset;
 }
 
-void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, out vec3 tangent, out vec3 bitangent, out vec3 normal){
+void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, vec2 objectSize, out vec3 tangent, out vec3 bitangent, out vec3 normal){
 	// "Height" should be stored in z.
 
 	// Sample depth texture to calculate the normal
@@ -50,14 +50,11 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	float deltaY = (depthSampleEast - depthSampleWest)/(eastUV.y - westUV.y);
 	
 	// this looks more correct than having the constant in z, probably because we're workign in worldspace where y is "up" instread of how z usually is in tangent space.
-	// We're setting the normal length to higher than 1 because the normals generated tend to be extremely tilted on the height map
-	// compared to the weight we're giving each vertex offset.
-	// These values seem to be a good compromise, removing shadows from most places they shouldn't be, while allowing for shadows near
-	// sharp edges to act as a form of cel shading.
 	// I'm not *really* sure why we have to negate these delta vectors, though. That feels weird. I must have an unnesecary negation
 	// somewhere before this in the pipeline...?
+	// We divide the deltas with object size to make them fit the scale of the object. Otherwise we get black edges on stuff that is persumed barely visible.
 
-	normal = normalize(vec3(-deltaX, 1, -deltaY));
+	normal = normalize(vec3(-deltaX / objectSize.x, 1, -deltaY / objectSize.y));
 
 	// we can also use one of the direction pairs to create a tangent
 	tangent = normalize(vec3(northUV.x, depthSampleNorth, northUV.y) - vec3(southUV.x, depthSampleNorth, southUV.y));

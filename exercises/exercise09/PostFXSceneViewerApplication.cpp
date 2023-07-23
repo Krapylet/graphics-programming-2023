@@ -246,7 +246,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
 
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapTest3.jpg", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
@@ -254,6 +254,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
         m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
+
+        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
+        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
     }
 
     // Deferred material
@@ -348,7 +351,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(1 , 1, 100, 100);
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength , m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
@@ -556,7 +559,7 @@ void PostFXSceneViewerApplication::RenderGUI()
         {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
         }
-        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0, 1))
+        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0.01f, 1))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }

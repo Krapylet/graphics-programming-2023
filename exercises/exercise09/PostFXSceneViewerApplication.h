@@ -74,6 +74,12 @@ private:
     float m_sampleDistance= 0;
     float m_offsetStrength = 0;
 
+    // Desert values
+    float m_desertWidth = 1;
+    float m_desertLength = 2;
+    float m_desertVertexRows = 100;
+    float m_desertVertexCollumns = 100;
+
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
     std::shared_ptr<Texture2DObject> m_depthTexture;
