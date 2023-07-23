@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 ViewNormal;
 layout (location = 1) in vec3 ViewTangent;
 layout (location = 2) in vec3 ViewBitangent;
-layout (location = 3) in vec3 TangentNormal;
+layout (location = 3) in vec3 WorldNormal; // Fragment normal in world(?) space.
 layout (location = 4) in vec2 TexCoord;
 
 //Outputs
@@ -16,9 +16,12 @@ layout (location = 2) out vec4 FragOthers;
 uniform vec3 Color;
 uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
+uniform sampler2D NoiseTexture;
+uniform float NoiseStrength;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform float TileSize;
 uniform mat4 WorldViewMatrix; // converts from world space to view space
+
 
 void main()
 {	
@@ -33,24 +36,27 @@ void main()
 	vec3 normalTangentSpace = GetImplicitNormal(normalMap);
 
 	// convert normal map to world space. The fact that we have to do this conversion really feels like a bug. I must be doing something wrong somethere in the stack.
+	// It probably stems from the same source that screws up the normal calculations in the depthMapUitls.
 	normalTangentSpace = vec3(normalTangentSpace.x, normalTangentSpace.z, -normalTangentSpace.y);
 
 	// Divide the normals size to make the height map more pronounced.
-	normalTangentSpace /= 10;
+	normalTangentSpace /= 5;
 
 	// Combine depth map normal and normal map normal in tangent space using UDN:
-	// Since Y is the "up" direction, we switch that with z in the formular.
-	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + TangentNormal.x, TangentNormal.y, normalTangentSpace.z + TangentNormal.z));
+	// - Since Y is the "up" direction, we switch that with z in the formular.
+	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + WorldNormal.x, WorldNormal.y, normalTangentSpace.z + WorldNormal.z));
 
-	// Return normal in view space
+	// add pixel noise to the normal.
+	// - We only change the "up" value, making the sand grains more likely to turn in a more/less extreme direction of their current tilt.
+	// - We sample with the UV to make each fragment sample from the same noise value each frame. That way we should get temporal consitency rather than random flickering.
+	// - Noise is sampled such that grey is 0, white is 1 and black is -1.
+	float noise = texture(NoiseTexture, vec2(u*2,v*2)).x * 2 - 1;
+
+	combinedTangentSpaceNormal =  normalize(vec3(combinedTangentSpaceNormal.x, combinedTangentSpaceNormal.y + noise * NoiseStrength, combinedTangentSpaceNormal.z));
+
+	// get normal in view space
 	vec3 screenSpaceMapNormal = normalize(WorldViewMatrix * vec4(combinedTangentSpaceNormal,0)).xyz;
 
-	// Combine normals with the UDN method to make the normal waves softer and keep 
-	// celshaded edges and to not have shadows on top edges of hills.
-	// UDN could beneficially be modified to 
-	// 1 - Viewnormal.y works well for square scale
-	// Viewnormal.y works well for scaled.
-	// height-weighted linear blend: vec3 combinedNormal =  normalize(vec3(screenSpaceMapNormal.x + ViewNormal.x, screenSpaceMapNormal.y + ViewNormal.y, ViewNormal.z));
 	FragNormal = screenSpaceMapNormal.xy;
 
 	FragAlbedo = vec4(Color, 1);

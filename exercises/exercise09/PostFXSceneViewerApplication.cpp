@@ -245,9 +245,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Create material
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
-
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
-        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
         m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
@@ -256,8 +253,17 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("Unused", m_unused);
         m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
         m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
+        
+        // load textures
+        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
+
+        std::shared_ptr<Texture2DObject> noiseTexture = Texture2DLoader::LoadTextureShared("textures/PixelNoise.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16, true, false);
+        m_desertSandMaterial->SetUniformValue("NoiseTexture", noiseTexture);
+
         std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16, true, false);
         m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
+
 
         // can maybe take scale into account as well if scale in multiplied in here.
         m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
@@ -567,6 +573,10 @@ void PostFXSceneViewerApplication::RenderGUI()
         if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0.01f, 1))
         {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        }
+        if (ImGui::DragFloat("NoiseStrength", &m_noiseStrength, 0.1f, -10, 10))
+        {
+            m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         }
 
     }

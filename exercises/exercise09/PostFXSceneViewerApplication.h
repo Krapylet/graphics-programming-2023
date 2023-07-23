@@ -80,6 +80,7 @@ private:
     float m_desertLength = 10;
     float m_desertVertexRows = 100;
     float m_desertVertexCollumns = 100;
+    float m_noiseStrength = 1;
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
