@@ -113,7 +113,7 @@ void PostFXSceneViewerApplication::InitializeLights()
     std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
     directionalLight->SetDirection(m_lightDirection); // It will be normalized inside the function
     directionalLight->SetIntensity(3.0f);
-    directionalLight->SetColor(glm::vec3(0.2, 0.4, 0.8));
+//    directionalLight->SetColor(glm::vec3(0, 0, 1));
     m_scene.AddSceneNode(std::make_shared<SceneLight>("directional light", directionalLight));
 
     // Create a point light and add it to the scene

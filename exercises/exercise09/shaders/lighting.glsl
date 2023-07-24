@@ -77,14 +77,7 @@ vec3 ComputeLight(SurfaceData data, vec3 viewDir, vec3 position)
 	
 	float shadow = ComputeShadow(position);
 
-	light *= LightColor * attenuation;
-
-	// make parts mix towards the shadow color based on how dark they are
-	vec3 shadowStrength = vec3(1 - shadow);
-	
-	light = mix(light, data.shadowColor, shadowStrength);
-
-	return light;
+    return light * LightColor * attenuation * shadow;
 }
 
 vec3 ComputeLighting(vec3 position, SurfaceData data, vec3 viewDir, bool indirect)

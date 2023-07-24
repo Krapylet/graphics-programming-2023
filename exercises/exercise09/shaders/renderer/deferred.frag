@@ -35,7 +35,7 @@ void main()
 	data.ambientOcclusion = others.x;
 	data.roughness = others.y;
 	data.metalness = others.z;
-	data.shadowColor = vec3(0, 1, 0); 
+	data.shadowColor = vec3(0.8, 0.4, 0.2); 
 
 	// Compute lighting
 	vec3 lighting = ComputeLighting(position, data, viewDir, true);
