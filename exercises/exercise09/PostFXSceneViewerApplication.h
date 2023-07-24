@@ -66,6 +66,9 @@ private:
     std::shared_ptr<Material> m_bloomMaterial;
     std::shared_ptr<Material> m_desertSandMaterial;
 
+    // Models
+    std::shared_ptr<Model> cannonModel;
+
     // debug values for materials.
     float m_ambientOcclusion = 1;
     float m_metalness = 1;

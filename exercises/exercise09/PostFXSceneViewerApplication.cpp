@@ -195,6 +195,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         );
 
         // Filter out uniforms that are not material properties
+        // Use for all "pr. object" values
         ShaderUniformCollection::NameSet filteredUniforms;
         filteredUniforms.insert("WorldViewMatrix");
         filteredUniforms.insert("WorldViewProjMatrix");
@@ -252,7 +253,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         // Create material
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(1.0f));
         m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
         m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
         m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
@@ -351,6 +351,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     ModelLoader loader(m_defaultMaterial);
 
     // Create a new material copy for each submaterial
+    // if true, you need to set uniforms by looping over every single material on the model you wanna update, since each material is a different instance.
     loader.SetCreateMaterials(true);
 
     // Flip vertically textures loaded by the model loader
@@ -370,7 +371,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::SpecularTexture, "SpecularTexture");
 
     // Load models
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/arch/arch.obj");
+    cannonModel = loader.LoadShared("models/arch/arch.obj");
     m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
 
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength , m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
@@ -559,7 +560,11 @@ void PostFXSceneViewerApplication::RenderGUI()
     {
         if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
         {
-            m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+            int count = cannonModel->GetMaterialCount();
+            for (unsigned int i = 0; i < count; i++)
+            {
+                cannonModel->GetMaterial(i).SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+            }
             m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
         }
         if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1))

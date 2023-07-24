@@ -22,7 +22,10 @@ uniform float NoiseTileFrequency;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform float TileSize;
 uniform mat4 WorldViewMatrix; // converts from world space to view space
-
+uniform float AmbientOcclusion;
+uniform float Metalness;
+uniform float Roughness;
+uniform float Unused;
 
 
 void main()
@@ -66,5 +69,6 @@ void main()
 
 	FragAlbedo = vec4(Color, 1);
 
-	FragOthers = vec4(1,0.5,0,1);
+	// ambientOcclusion, metalness, roughness, unused,
+	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, Unused); //texture(SpecularTexture, TexCoord);
 }
