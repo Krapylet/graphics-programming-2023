@@ -9,6 +9,7 @@ struct SurfaceData
 	float ambientOcclusion;
 	float roughness;
 	float metalness;
+	vec3 shadowColor;
 };
 
 // Constant value for PI
@@ -106,8 +107,19 @@ vec3 CombineIndirectLighting(vec3 diffuse, vec3 specular, SurfaceData data, vec3
 	// Compute the Fresnel term between the normal and the view direction
 	vec3 fresnel = FresnelSchlick(GetReflectance(data), viewDir, data.normal);
 
-	// Linearly interpolate between the diffuse and specular term, using the fresnel value
-	return mix(diffuse, specular, fresnel) * data.ambientOcclusion;
+	//We can colorize the shadow by "replacing the black" in the specular with the shadow color
+	vec3 coloredShadow = vec3(
+		data.shadowColor.x * (1-specular.x),
+		data.shadowColor.y * (1-specular.y),
+		data.shadowColor.z * (1-specular.z)
+	);
+	
+	// First mix in the colored specular shadows with linear interpolation
+	vec3 lightColor = mix(diffuse, coloredShadow, fresnel);
+	
+	// Then use the ambient occlusion to move further towards the shadow color
+	lightColor = mix(lightColor, data.shadowColor, 1-data.ambientOcclusion);
+	return lightColor;
 }
 
 vec3 ComputeDiffuseLighting(SurfaceData data, vec3 lightDir)

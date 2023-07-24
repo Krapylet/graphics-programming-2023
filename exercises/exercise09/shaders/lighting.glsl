@@ -77,7 +77,14 @@ vec3 ComputeLight(SurfaceData data, vec3 viewDir, vec3 position)
 	
 	float shadow = ComputeShadow(position);
 
-	return light * LightColor * attenuation * shadow;
+	light *= LightColor * attenuation;
+
+	// make parts mix towards the shadow color based on how dark they are
+	vec3 shadowStrength = vec3(1 - shadow);
+	
+	light = mix(light, data.shadowColor, shadowStrength);
+
+	return light;
 }
 
 vec3 ComputeLighting(vec3 position, SurfaceData data, vec3 viewDir, bool indirect)
@@ -88,6 +95,10 @@ vec3 ComputeLighting(vec3 position, SurfaceData data, vec3 viewDir, bool indirec
 	{
 		vec3 diffuseIndirect = ComputeDiffuseIndirectLighting(data);
 		vec3 specularIndirect = ComputeSpecularIndirectLighting(data, viewDir);
+
+		// Since we're colorizing the shadows, it's not correct to just add the different colors together. Instead it would be better
+		// To calculate the total shadow seperately so that it can be colorized in one go. That way we avoid stacking shadows of the
+		// same color, thereby making them brighter.
 		light += CombineIndirectLighting(diffuseIndirect, specularIndirect, data, viewDir);
 	}
 
