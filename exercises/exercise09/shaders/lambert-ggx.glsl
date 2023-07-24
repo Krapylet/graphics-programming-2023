@@ -113,7 +113,7 @@ vec3 CombineIndirectLighting(vec3 diffuse, vec3 specular, SurfaceData data, vec3
 vec3 ComputeDiffuseLighting(SurfaceData data, vec3 lightDir)
 {
 	// Implement the lambertian equation for diffuse
-	return GetAlbedo(data) * invPi;
+	return GetAlbedo(data) * dot(data.normal , lightDir);
 }
 
 vec3 ComputeSpecularLighting(SurfaceData data, vec3 lightDir, vec3 viewDir)
