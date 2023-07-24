@@ -82,7 +82,7 @@ private:
 
     // debug values for materials.
     float m_ambientOcclusion = 1;
-    float m_metalness = 1;
+    float m_metalness = 0.35f;
     float m_roughness = 0;
     float m_unused = 0;
     float m_sampleDistance= 0;
