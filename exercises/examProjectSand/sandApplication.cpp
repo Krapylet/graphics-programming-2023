@@ -139,6 +139,8 @@ void SandApplication::HandlePlayerMovement() {
     // Apply move the visual model along with the parnet
     std::shared_ptr<Transform> playerModelTransform = m_visualPlayerModel->GetTransform();
     playerModelTransform->SetTranslation(translation);
+    // make the player turn around and face the same direction as the camera. Will probably fuck op the drive on sand shader.
+    playerModelTransform->SetRotation(rotation + glm::vec3(0, 0, 0));
 }
 
 // Makes camera follow the model in m_parentModel in a third person view.
@@ -758,7 +760,7 @@ void SandApplication::InitializeModels()
 
     // Load models. ALL MODELS NEED UNIQUE NAMES. Otherwise they won't be rendered.
     // The loader probably needs to be configured differntly for each different material we use for an object.
-    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/temple-ruin/Temple ruin.obj");
+    std::shared_ptr<Model> cannonModel = loader.LoadShared("models/cannon/cannon.obj");
     std::shared_ptr<SceneModel> player =  std::make_shared<SceneModel>("cannon", cannonModel);
     m_scene.AddSceneNode(player);
     m_visualPlayerModel = player;

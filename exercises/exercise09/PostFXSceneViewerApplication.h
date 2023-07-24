@@ -43,6 +43,9 @@ private:
     std::shared_ptr<Material> GeneratePropMaterial(int propIndex);
     std::shared_ptr<SceneModel> SpawnProp(ModelLoader loader, const char* objectName, const char* modelPath);
 
+    void HandlePlayerMovement();
+    void MakeCameraFollowPlayer();
+
     void RenderGUI();
 
 private:
@@ -74,11 +77,17 @@ private:
     std::shared_ptr<Material> m_desertSandMaterial;
 
     // Named models
-    std::shared_ptr<Model> m_cannonModel;
+    std::shared_ptr<SceneModel> m_parentModel;
+    std::shared_ptr<SceneModel> m_visualPlayerModel;
     
     // Prop models and materials
     std::shared_ptr<std::vector<std::shared_ptr<SceneModel>>> m_propModels;
     std::shared_ptr<std::vector<std::shared_ptr<Material>>> m_propMaterials;
+
+    // Player control parameters
+    float m_playerSpeed = 10;
+    float m_playerAngularSpeed = 4;
+    float m_cameraDistance = 5;
 
     // debug values for materials.
     float m_ambientOcclusion = 1;

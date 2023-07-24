@@ -62,11 +62,106 @@ void PostFXSceneViewerApplication::Update()
     Application::Update();
 
     // Update camera controller
-    m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+    //m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+
+
+    // Move player object
+    HandlePlayerMovement();
+    // make camera follow player object
+    MakeCameraFollowPlayer();
 
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);
     m_scene.AcceptVisitor(rendererSceneVisitor);
+}
+
+// Moves the player transform based in player input. Control with WASD
+void PostFXSceneViewerApplication::HandlePlayerMovement() {
+
+    // Take keyboard input
+    const Window& window = GetMainWindow();
+    // First rotation
+
+    float inputAngularSpeed = 0;
+    if (window.IsKeyPressed(GLFW_KEY_A))
+        inputAngularSpeed += 1.0f;
+    if (window.IsKeyPressed(GLFW_KEY_D))
+        inputAngularSpeed += -1.0f;
+
+    // Then translation
+    float inputSpeed = 0;
+    if (window.IsKeyPressed(GLFW_KEY_W))
+        inputSpeed += -1.0f;
+    if (window.IsKeyPressed(GLFW_KEY_S))
+        inputSpeed += 0.3f;
+
+    // Multiply result by player parameters
+    inputSpeed *= m_playerSpeed;
+    inputAngularSpeed *= m_playerAngularSpeed;
+
+    // Double speed if SHIFT is pressed
+    if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
+        inputSpeed *= 2.0f;
+
+
+    // Find the local directions for the player objects
+    // Once again, the reason we have this parent object, is that it makes rotating the player model and camera together much easier. 
+    std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
+    glm::mat3 transposed = parentTransform->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
+
+    // Keeping unusde directions here so i can remember where they are placed.
+    // NB: They are not normalized.
+    glm::vec3 right = transposed[0];
+    glm::vec3 up = transposed[1];
+    glm::vec3 forward = transposed[2];
+
+    // Apply speed over time to the translation
+    float delta = GetDeltaTime();
+    glm::vec3 translation = parentTransform->GetTranslation();
+    glm::vec3 rotation = parentTransform->GetRotation();
+
+    translation += forward * inputSpeed * delta;
+    rotation += up * inputAngularSpeed * delta;
+
+    // apply the updated translation and rotation to the parent.
+    parentTransform->SetTranslation(translation);
+    parentTransform->SetRotation(rotation);
+
+    // Apply move the visual model along with the parnet
+    std::shared_ptr<Transform> playerModelTransform = m_visualPlayerModel->GetTransform();
+    playerModelTransform->SetTranslation(translation);
+}
+
+// Makes camera follow the model in m_parentModel in a third person view.
+void PostFXSceneViewerApplication::MakeCameraFollowPlayer() {
+    // to make camera follow car: each frame, copy transform, and then rotate a bit around x, and then translate back.
+    // First, match camera translation to followed object.
+    const float PI = 3.14159265358979;
+
+    std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
+    std::shared_ptr<Transform> cameraTransform = m_cameraController.GetCamera()->GetTransform();
+
+    // Then rotate the camera to point the same way as the player model around the y axis.
+    glm::vec3 rotation = glm::vec3(0, parentTransform->GetRotation().y, 0);
+
+    // rotate it slightly around the x axis to point it a bit downards.
+    rotation += glm::vec3(-PI / 16, 0, 0);
+    cameraTransform->SetRotation(rotation);
+
+    //// then match the camera translation to the camera
+    glm::vec3 translation = parentTransform->GetTranslation();
+
+    // To move the camera, we need to know the camera's forward direction.
+    glm::vec3 right; glm::vec3 up; glm::vec3 forward;
+    std::shared_ptr<SceneCamera> camera = m_cameraController.GetCamera();
+    camera->GetCamera()->ExtractVectors(right, up, forward);
+
+    // Now we can move the camera back and a bit up to get the player model in frame
+    translation += (forward + up / 3.0f) * m_cameraDistance + up * m_offsetStrength / 2.0f;
+    cameraTransform->SetTranslation(translation);
+
+    // Lastly, make the actual camera viewport update according to the transform changes.
+    camera->MatchCameraToTransform();
 }
 
 void PostFXSceneViewerApplication::Render()
@@ -460,9 +555,16 @@ void PostFXSceneViewerApplication::InitializeModels()
     m_scene.AddSceneNode(plane);
     plane->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
 
-    // Load models
-    m_cannonModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", m_cannonModel));
+    //// Load models
+    // Parent model shoudl have an empty model.
+    std::shared_ptr<Model> cannonEmptyModel = loader.LoadShared("models/cannon/cannon.obj");
+    m_parentModel = std::make_shared<SceneModel>("parent", cannonEmptyModel);
+    m_scene.AddSceneNode(m_parentModel);
+
+    // Player model. Automatically follows parent model.
+    std::shared_ptr<Model> cannonModel = std::make_shared<Model>(loader.Load("models/cannon/cannon.obj"));
+    m_visualPlayerModel = std::make_shared<SceneModel>("cannon", cannonModel);
+    m_scene.AddSceneNode(m_visualPlayerModel);
 
     // Generate two props and see if they get different materials that react to them.
     // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.
@@ -650,12 +752,18 @@ void PostFXSceneViewerApplication::RenderGUI()
     {
         if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
         {
+            m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+            m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+
+            // How to update materials on loaded models.
+            /*
             int count = m_cannonModel->GetMaterialCount();
             for (unsigned int i = 0; i < count; i++)
             {
                 m_cannonModel->GetMaterial(i).SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
             }
             m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+            */
         }
         if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1))
         {
