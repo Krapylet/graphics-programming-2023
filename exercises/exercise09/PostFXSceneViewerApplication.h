@@ -69,7 +69,7 @@ private:
 
     // Materials
     std::shared_ptr<Material> m_defaultMaterial;
-    std::shared_ptr<Material> propMaterial;
+    std::shared_ptr<Material> m_driveOnSandMateral;
     std::shared_ptr<Material> m_deferredMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
@@ -79,6 +79,7 @@ private:
     // Named models
     std::shared_ptr<SceneModel> m_parentModel;
     std::shared_ptr<SceneModel> m_visualPlayerModel;
+    std::shared_ptr<SceneModel> m_desertModel;
     
     // Prop models and materials
     std::shared_ptr<std::vector<std::shared_ptr<SceneModel>>> m_propModels;
@@ -94,7 +95,7 @@ private:
     float m_metalness = 0.35f;
     float m_roughness = 0;
     float m_unused = 0;
-    float m_sampleDistance= 0;
+    float m_sampleDistance = 0;
     float m_offsetStrength = 0;
 
     // Light values

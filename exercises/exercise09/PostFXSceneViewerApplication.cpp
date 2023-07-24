@@ -111,9 +111,9 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
 
     // Keeping unusde directions here so i can remember where they are placed.
     // NB: They are not normalized.
-    glm::vec3 right = transposed[0];
-    glm::vec3 up = transposed[1];
-    glm::vec3 forward = transposed[2];
+    glm::vec3 right = glm::normalize(transposed[0]);
+    glm::vec3 up = glm::normalize(transposed[1]);
+    glm::vec3 forward = glm::normalize(transposed[2]);
 
     // Apply speed over time to the translation
     float delta = GetDeltaTime();
@@ -223,6 +223,9 @@ void PostFXSceneViewerApplication::InitializeLights()
 void PostFXSceneViewerApplication::InitializeMaterials()
 {
     m_propMaterials = std::make_shared<std::vector<std::shared_ptr<Material>>>();
+
+    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    
 
     // Shadow map material
     {
@@ -365,12 +368,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
         m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
-
+        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
         
         // load textures
-        std::shared_ptr<Texture2DObject> m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
-        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
-
         std::shared_ptr<Texture2DObject> noiseTexture = Texture2DLoader::LoadTextureShared("textures/PixelNoise.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16);
         m_desertSandMaterial->SetUniformValue("NoiseTexture", noiseTexture);
 
@@ -381,6 +381,70 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // can maybe take scale into account as well if scale in multiplied in here.
         m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
         
+    }
+
+    // drive on sand G-buffer material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/utils.glsl");
+        fragmentShaderPaths.push_back("shaders/driveOnSand.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location dersertUVLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+
+                // Calculate the models position on the desert model in UV coordinates.
+                glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
+                glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+                glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+                glm::vec3 desertPosOnDesert = modelPos - desertPos;
+                float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+                float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+                shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        // Use for all "pr. object" values
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("DesertUV");
+
+        // Create material
+        // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
+        m_driveOnSandMateral = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        m_driveOnSandMateral->SetUniformValue("Color", glm::vec3(1.0f));
+        m_driveOnSandMateral->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        m_driveOnSandMateral->SetUniformValue("Metalness", m_metalness);
+        m_driveOnSandMateral->SetUniformValue("Roughness", m_roughness);
+        m_driveOnSandMateral->SetUniformValue("Unused", m_unused);
+
+        m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
+        m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
+        m_driveOnSandMateral->SetUniformValue("DepthMap", displacementMap);
+
     }
 
     // Deferred material
@@ -551,9 +615,9 @@ void PostFXSceneViewerApplication::InitializeModels()
     // Generate ground plane
     std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength, m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
-    std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
-    m_scene.AddSceneNode(plane);
-    plane->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
+    m_desertModel = std::make_shared<SceneModel>("Plane", planeModel);
+    m_scene.AddSceneNode(m_desertModel);
+    m_desertModel->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
 
     //// Load models
     // Parent model shoudl have an empty model.
@@ -562,6 +626,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     m_scene.AddSceneNode(m_parentModel);
 
     // Player model. Automatically follows parent model.
+    loader.SetReferenceMaterial(m_driveOnSandMateral);
     std::shared_ptr<Model> carModel = std::make_shared<Model>(loader.Load("models/car/car.obj"));
     m_visualPlayerModel = std::make_shared<SceneModel>("cannon", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
@@ -782,10 +847,12 @@ void PostFXSceneViewerApplication::RenderGUI()
         }
         if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 1))
         {
+            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("OffsetStrength", m_offsetStrength);
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
         }
         if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0.01f, 1))
         {
+            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("SampleDistance", m_sampleDistance);
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         }
         if (ImGui::DragFloat("NoiseStrength", &m_noiseStrength, 0.1f, -1, 1))
