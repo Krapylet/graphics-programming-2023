@@ -62,3 +62,8 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	// And this tangent can be used to compute the bitangent
 	bitangent = normalize(cross(normal, tangent));
 }
+
+// even though sqrt shoudln't be that bad on GPUS, we still use the manhatten distance to be a bit faster
+float GetManhattenDistance(vec3 a, vec3 b){
+	return pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2);
+}

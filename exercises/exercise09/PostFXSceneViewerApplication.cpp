@@ -668,7 +668,6 @@ void PostFXSceneViewerApplication::InitializeModels()
     std::shared_ptr<Model> carModel = std::make_shared<Model>(loader.Load("models/car/car.obj"));
     m_visualPlayerModel = std::make_shared<SceneModel>("car", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
-    m_visualPlayerModel->GetTransform()->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
     // Generate two props and see if they get different materials that react to them.
     // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.

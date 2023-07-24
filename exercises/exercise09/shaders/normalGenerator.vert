@@ -21,18 +21,58 @@ uniform sampler2D DepthMap;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform vec3[12] PlayerPositions;
 
+// constants
+const int playerPositionCount = 12;
+
+float calculateWaveEffect(float distToClosesPoint){
+	float distThreshold = 6;
+	bool distIsWithinEffect = distToClosesPoint < distThreshold;
+
+	// Effect times wave strength.
+	// dist divided with wave width.
+	// distThreshold multiplied with wave width.
+	return distIsWithinEffect ? -cos(distToClosesPoint) - cos(distToClosesPoint/2) : 0;
+}
+
+
 void main()
 {
 
 	// texture coordinates
 	TexCoord = VertexTexCoord;
 
-	// ------- Vertex position --------
+	// ------- Vertex position height offset --------
 	
 	// final vertex position (for opengl rendering, *AND* for lighting)
 	float vertexOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
 
-	vec3 vertexOffsetVector = vec3(0, vertexOffset + PlayerPositions[0].x, 0);
+
+	// ------ Vetex position player dist offset ------
+
+	// compute distance to each of the saved positions
+	float bestDistSoFar = 99999999;
+	int bestIndexSoFar = 0;
+	for (int i = 0; i < playerPositionCount; i += 1){
+		float dist = GetManhattenDistance(PlayerPositions[i], VertexPosition);
+
+		// Update best dist and index if new distance is lower
+		// only one branch is evaluated https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.50.pdf
+		bestDistSoFar = dist < bestDistSoFar ? dist : bestDistSoFar;
+		bestIndexSoFar = dist < bestDistSoFar ? i : bestIndexSoFar;
+	}
+
+	// Now that we know which point is closes and how far it is, we can compute the effect of the car driving by
+	// We use a cosinus curve to get a nice wave shape.
+	float waveEffect = calculateWaveEffect(bestDistSoFar);
+
+
+	// We use an easing function and the index to reduce the wave effect based on how old the position is.
+
+
+
+	// ------- combine offsets -----------
+
+	vec3 vertexOffsetVector = vec3(0, vertexOffset + waveEffect, 0);
 
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
 
