@@ -405,6 +405,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
         ShaderProgram::Location dersertUVLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+        ShaderProgram::Location rightLocation = shaderProgramPtr->GetUniformLocation("Right");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -421,6 +422,11 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                 float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
                 float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
                 shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
+
+                // calculate the model's right
+                glm::mat3 modelTransform = m_parentModel->GetTransform()->GetTransformMatrix();
+                glm::vec3 right = glm::normalize(modelTransform[0]);
+                shaderProgram.SetUniform(rightLocation, right);
             },
             nullptr
                 );
@@ -431,6 +437,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewMatrix");
         filteredUniforms.insert("WorldViewProjMatrix");
         filteredUniforms.insert("DesertUV");
+        filteredUniforms.insert("Right");
 
         // Create material
         // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
@@ -445,6 +452,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
         m_driveOnSandMateral->SetUniformValue("DepthMap", displacementMap);
 
+        m_driveOnSandMateral->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
     }
 
     // Deferred material

@@ -95,8 +95,8 @@ private:
     float m_metalness = 0.35f;
     float m_roughness = 0;
     float m_unused = 0;
-    float m_sampleDistance = 0;
-    float m_offsetStrength = 0;
+    float m_sampleDistance = 0.01;
+    float m_offsetStrength = 1;
 
     // Light values
     glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -3.14f);
