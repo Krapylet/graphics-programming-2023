@@ -9,6 +9,9 @@
 #include <ituGL/utils/DearImGui.h>
 #include <array>
 
+#include <ituGL/scene/SceneModel.h>
+#include <ituGL/asset/ModelLoader.h>
+
 class Texture2DObject;
 class TextureCubemapObject;
 class Material;
@@ -37,6 +40,9 @@ private:
 
     Renderer::UpdateTransformsFunction GetFullscreenTransformFunction(std::shared_ptr<ShaderProgram> shaderProgramPtr) const;
 
+    std::shared_ptr<Material> GeneratePropMaterial(int propIndex);
+    std::shared_ptr<SceneModel> SpawnProp(ModelLoader loader, const char* objectName, const char* modelPath);
+
     void RenderGUI();
 
 private:
@@ -60,14 +66,19 @@ private:
 
     // Materials
     std::shared_ptr<Material> m_defaultMaterial;
+    std::shared_ptr<Material> propMaterial;
     std::shared_ptr<Material> m_deferredMaterial;
     std::shared_ptr<Material> m_shadowMapMaterial;
     std::shared_ptr<Material> m_composeMaterial;
     std::shared_ptr<Material> m_bloomMaterial;
     std::shared_ptr<Material> m_desertSandMaterial;
 
-    // Models
-    std::shared_ptr<Model> cannonModel;
+    // Named models
+    std::shared_ptr<Model> m_cannonModel;
+    
+    // Prop models and materials
+    std::shared_ptr<std::vector<std::shared_ptr<SceneModel>>> m_propModels;
+    std::shared_ptr<std::vector<std::shared_ptr<Material>>> m_propMaterials;
 
     // debug values for materials.
     float m_ambientOcclusion = 1;

@@ -126,6 +126,8 @@ void PostFXSceneViewerApplication::InitializeLights()
 
 void PostFXSceneViewerApplication::InitializeMaterials()
 {
+    m_propMaterials = std::make_shared<std::vector<std::shared_ptr<Material>>>();
+
     // Shadow map material
     {
         // Load and build shader
@@ -163,7 +165,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_shadowMapMaterial->SetCullMode(Material::CullMode::Front);
     }
 
-    // G-buffer material
+    // default G-buffer material
     {
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
@@ -201,10 +203,14 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewProjMatrix");
 
         // Create material
+        // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
         m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_defaultMaterial->SetUniformValue("Color", glm::vec3(1.0f));
+        m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        m_defaultMaterial->SetUniformValue("Metalness", m_metalness);
+        m_defaultMaterial->SetUniformValue("Roughness", m_roughness);
+        m_defaultMaterial->SetUniformValue("Unused", m_unused);
     }
-
 
     // Sand deformation shader
     {
@@ -334,8 +340,84 @@ void PostFXSceneViewerApplication::InitializeMaterials()
     }
 }
 
+// Generates a G-buffer material for a generic prop with acces to the prop's model
+// This way props can include stuff like object position in their shader uniforms.
+std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int propIndex) {
+    
+    
+    // Load and build shader
+    std::vector<const char*> vertexShaderPaths;
+    vertexShaderPaths.push_back("shaders/version330.glsl");
+    vertexShaderPaths.push_back("shaders/default.vert");
+    Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+    std::vector<const char*> fragmentShaderPaths;
+    fragmentShaderPaths.push_back("shaders/version330.glsl");
+    fragmentShaderPaths.push_back("shaders/utils.glsl");
+    fragmentShaderPaths.push_back("shaders/default.frag");
+    Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+    std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+    shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+    // Get transform related uniform locations
+    ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+    ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+    ShaderProgram::Location ambientOcclusionLocation = shaderProgramPtr->GetUniformLocation("AmbientOcclusion");
+
+    // Register shader with renderer
+    m_renderer.RegisterShaderProgram(shaderProgramPtr,
+        [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+        {
+            shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+            shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            glm::vec3 propPosition = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
+            shaderProgram.SetUniform(ambientOcclusionLocation, propPosition.x);
+        },
+        nullptr
+            );
+
+    // Filter out uniforms that are not material properties
+    // Use for all "pr. object" values
+    ShaderUniformCollection::NameSet filteredUniforms;
+    filteredUniforms.insert("WorldViewMatrix");
+    filteredUniforms.insert("WorldViewProjMatrix");
+
+    // Create material
+    std::shared_ptr<Material> propMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+    m_propMaterials->push_back(propMaterial);
+
+    // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
+    propMaterial->SetUniformValue("Color", glm::vec3(1.0f));
+    //propMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+    propMaterial->SetUniformValue("Metalness", m_ambientOcclusion);
+    propMaterial->SetUniformValue("Roughness", m_roughness);
+    propMaterial->SetUniformValue("Unused", m_unused);
+    
+    return propMaterial;
+}
+
+std::shared_ptr<SceneModel> PostFXSceneViewerApplication::SpawnProp(ModelLoader loader, const char* objectName, const char* modelPath) {
+
+    // the index of the new prop is equal to the current amount of props since we index from 0
+    int propIndex = m_propModels->size();
+    std::shared_ptr<Material> propMaterial = GeneratePropMaterial(propIndex);
+
+    loader.SetReferenceMaterial(propMaterial);
+
+    std::shared_ptr<Model> model = loader.LoadShared(modelPath);
+    std::shared_ptr<SceneModel> sceneModel = std::make_shared<SceneModel>(objectName, model);
+    m_scene.AddSceneNode(sceneModel);
+
+    // add prop to list of props
+    m_propModels->push_back(sceneModel);
+
+    return sceneModel;
+}
+
 void PostFXSceneViewerApplication::InitializeModels()
 {
+    m_propModels = std::make_shared<std::vector<std::shared_ptr<SceneModel>>>();
     m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/yoga_studio.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
 
     m_skyboxTexture->Bind();
@@ -370,16 +452,23 @@ void PostFXSceneViewerApplication::InitializeModels()
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::NormalTexture, "NormalTexture");
     loader.SetMaterialProperty(ModelLoader::MaterialProperty::SpecularTexture, "SpecularTexture");
 
-    // Load models
-    cannonModel = loader.LoadShared("models/arch/arch.obj");
-    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", cannonModel));
-
-    std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength , m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
+    // Generate ground plane
+    std::shared_ptr<Model> planeModel = Model::GeneratePlane(m_desertLength, m_desertWidth, m_desertVertexRows, m_desertVertexCollumns);
     planeModel->AddMaterial(m_desertSandMaterial);
     std::shared_ptr<SceneModel> plane = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(plane);
     plane->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
-}
+
+    // Load models
+    m_cannonModel = loader.LoadShared("models/cannon/cannon.obj");
+    m_scene.AddSceneNode(std::make_shared<SceneModel>("cannon", m_cannonModel));
+
+    // Generate two props and see if they get different materials that react to them.
+    // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.
+    std::shared_ptr<SceneModel> archA = SpawnProp(loader, "archA", "models/arch/arch.obj");
+    std::shared_ptr<SceneModel> archB = SpawnProp(loader, "archB", "models/arch/arch.obj");
+    archB->GetTransform()->SetTranslation(glm::vec3(2, 0, 2));
+    }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
 {
@@ -560,10 +649,10 @@ void PostFXSceneViewerApplication::RenderGUI()
     {
         if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
         {
-            int count = cannonModel->GetMaterialCount();
+            int count = m_cannonModel->GetMaterialCount();
             for (unsigned int i = 0; i < count; i++)
             {
-                cannonModel->GetMaterial(i).SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+                m_cannonModel->GetMaterial(i).SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
             }
             m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
         }
