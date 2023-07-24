@@ -629,8 +629,7 @@ void PostFXSceneViewerApplication::InitializeModels()
 
     //// Load models
     // Parent model shoudl have an empty model.
-    std::shared_ptr<Model> emptyModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_parentModel = std::make_shared<SceneModel>("parent", emptyModel);
+    m_parentModel = std::make_shared<SceneModel>("parent", nullptr);
     m_scene.AddSceneNode(m_parentModel);
 
     // Player model. Automatically follows parent model.

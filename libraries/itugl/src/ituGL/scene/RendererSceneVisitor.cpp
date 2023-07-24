@@ -24,5 +24,12 @@ void RendererSceneVisitor::VisitLight(SceneLight& sceneLight)
 void RendererSceneVisitor::VisitModel(SceneModel& sceneModel)
 {
     assert(sceneModel.GetTransform());
+
+    //  Only add the model if it isn't empty
+    bool modelHasNoMesh = sceneModel.GetModel() == nullptr;
+    if (modelHasNoMesh)
+        return;
+
+    // otherwise, add meshes as normal
     m_renderer.AddModel(*sceneModel.GetModel(), sceneModel.GetTransform()->GetTransformMatrix());
 }
