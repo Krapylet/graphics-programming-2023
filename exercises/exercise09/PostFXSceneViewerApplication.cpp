@@ -557,13 +557,13 @@ void PostFXSceneViewerApplication::InitializeModels()
 
     //// Load models
     // Parent model shoudl have an empty model.
-    std::shared_ptr<Model> cannonEmptyModel = loader.LoadShared("models/cannon/cannon.obj");
-    m_parentModel = std::make_shared<SceneModel>("parent", cannonEmptyModel);
+    std::shared_ptr<Model> emptyModel = loader.LoadShared("models/cannon/cannon.obj");
+    m_parentModel = std::make_shared<SceneModel>("parent", emptyModel);
     m_scene.AddSceneNode(m_parentModel);
 
     // Player model. Automatically follows parent model.
-    std::shared_ptr<Model> cannonModel = std::make_shared<Model>(loader.Load("models/cannon/cannon.obj"));
-    m_visualPlayerModel = std::make_shared<SceneModel>("cannon", cannonModel);
+    std::shared_ptr<Model> carModel = std::make_shared<Model>(loader.Load("models/car/car.obj"));
+    m_visualPlayerModel = std::make_shared<SceneModel>("cannon", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
 
     // Generate two props and see if they get different materials that react to them.
@@ -571,7 +571,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     std::shared_ptr<SceneModel> archA = SpawnProp(loader, "archA", "models/arch/arch.obj");
     std::shared_ptr<SceneModel> archB = SpawnProp(loader, "archB", "models/arch/arch.obj");
     archB->GetTransform()->SetTranslation(glm::vec3(2, 0, 2));
-    }
+}
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
 {
