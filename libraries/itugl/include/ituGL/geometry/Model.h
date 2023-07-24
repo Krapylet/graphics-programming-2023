@@ -42,6 +42,10 @@ public:
     // No material is applied to model by default.
     static std::shared_ptr<Model> GeneratePlane(float length, float width, int rows, int collumns);
 
+    // Models will ususally have multiple different submeshes with clones of the same material, which can be set all at once with this method.
+    template<typename T>
+    void SetUniformOnAllMaterials(const char* uniform, T value);
+
 
 private:
     // Pointer to the model Mesh
@@ -50,3 +54,13 @@ private:
     // List of material pointers, one for each submesh
     std::vector<std::shared_ptr<Material>> m_materials;
 };
+
+template<typename T>
+inline void Model::SetUniformOnAllMaterials(const char* name, const T value)
+{
+    int count = GetMaterialCount();
+    for (unsigned int i = 0; i < count; i++)
+    {
+        GetMaterial(i).SetUniformValue(name, value);
+    }
+}
