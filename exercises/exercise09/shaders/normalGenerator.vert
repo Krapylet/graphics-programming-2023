@@ -19,6 +19,7 @@ uniform float OffsetStrength;
 uniform float SampleDistance;
 uniform sampler2D DepthMap;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
+uniform vec3[12] PlayerPositions;
 
 void main()
 {
@@ -31,7 +32,7 @@ void main()
 	// final vertex position (for opengl rendering, *AND* for lighting)
 	float vertexOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
 
-	vec3 vertexOffsetVector = vec3(0, vertexOffset, 0);
+	vec3 vertexOffsetVector = vec3(0, vertexOffset + PlayerPositions[0].x, 0);
 
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
 

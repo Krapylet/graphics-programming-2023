@@ -117,6 +117,9 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
 
     for (int r = 0; r < rows; r++)
     {
+        if (r % 100 == 0) {
+            r = r;
+        }
         for (int c = 0; c < collumns; c++)
         {
             glm::vec3 tangent = glm::vec3(0, 0, 1);
@@ -130,6 +133,10 @@ std::shared_ptr<Model> Model::GeneratePlane(float length, float width, int rows,
             float z = c * width / (collumns - 1) - width/2;
 
             glm::vec3 vertexPos = glm::vec3(x, y, z);
+
+            if (c % 100 == 0) {
+                c = c;
+            }
 
             // 4.2 calulate texture coordinate (UV). Both are clamped betwen 0-1
             // For some reason, sampling near the edges becomes a problem. It seems to be a promlem with the loader? The image gets compressed quite a bit.

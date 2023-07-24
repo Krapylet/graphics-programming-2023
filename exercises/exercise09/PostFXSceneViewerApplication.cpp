@@ -27,6 +27,7 @@
 #include <imgui.h>
 
 #include <ituGL/scene/Transform.h>
+#include <span>
 
 PostFXSceneViewerApplication::PostFXSceneViewerApplication()
     : Application(1024, 1024, "Post FX Scene Viewer demo")
@@ -62,6 +63,7 @@ void PostFXSceneViewerApplication::Update()
     Application::Update();
 
     // Update camera controller
+    // Old movement method is still worth keeping around for debugging purposes.
     //m_cameraController.Update(GetMainWindow(), GetDeltaTime());
 
 
@@ -130,6 +132,30 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
     // Apply move the visual model along with the parnet
     std::shared_ptr<Transform> playerModelTransform = m_visualPlayerModel->GetTransform();
     playerModelTransform->SetTranslation(translation);
+
+    // prepend new player positions at specific intervals and update desert material.
+    AttemptToPrependNewPlayerPosition();
+}
+
+// prepend the value to the vector, overwriting the last value
+void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
+    float newSampleThreshold = m_lastPosSampleTimestamp + 1 / m_playerPosSampleFrequency;
+    
+    bool isTooEarlyForNextSample = GetCurrentTime() < newSampleThreshold;
+    if (isTooEarlyForNextSample)
+        return;
+
+    // Add newest value to the front
+    glm::vec3 playerPos = m_parentModel->GetTransform()->GetTranslation();
+    m_playerPositions->insert(m_playerPositions->begin(), playerPos);
+
+    // delete the last value
+    m_playerPositions->erase(m_playerPositions->begin() + m_playerPositions->size() - 1);
+
+
+    // We update desert material here so it only happens whenever they change
+    std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
+    m_desertSandMaterial->SetUniformValues("PlayerPositions", playerPosSpan);
 }
 
 // Makes camera follow the model in m_parentModel in a third person view.
@@ -369,6 +395,11 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+
+        // Car positions are initialized to 0, since the car hasn't driven anywhere yet.
+        m_playerPositions = std::make_shared<std::vector<glm::vec3>>(m_playerPosSampleCount, glm::vec3(0,0,0));
+        std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
+        m_desertSandMaterial->SetUniformValues("PlayerPositions", playerPosSpan);
         
         // load textures
         std::shared_ptr<Texture2DObject> noiseTexture = Texture2DLoader::LoadTextureShared("textures/PixelNoise.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16);
@@ -635,8 +666,9 @@ void PostFXSceneViewerApplication::InitializeModels()
     // Player model. Automatically follows parent model.
     loader.SetReferenceMaterial(m_driveOnSandMateral);
     std::shared_ptr<Model> carModel = std::make_shared<Model>(loader.Load("models/car/car.obj"));
-    m_visualPlayerModel = std::make_shared<SceneModel>("cannon", carModel);
+    m_visualPlayerModel = std::make_shared<SceneModel>("car", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
+    m_visualPlayerModel->GetTransform()->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
     // Generate two props and see if they get different materials that react to them.
     // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.

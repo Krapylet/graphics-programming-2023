@@ -45,6 +45,7 @@ private:
 
     void HandlePlayerMovement();
     void MakeCameraFollowPlayer();
+    void AttemptToPrependNewPlayerPosition();
 
     void RenderGUI();
 
@@ -89,6 +90,11 @@ private:
     float m_playerSpeed = 10;
     float m_playerAngularSpeed = 4;
     float m_cameraDistance = 5;
+    float m_lastPosSampleTimestamp = 0;
+    float m_playerPosSampleFrequency = 4; // how many times pr. second to sample player position.
+    int m_playerPosSampleCount = 12; // How many samples to keep at a time. NEEDS TO MATCH ARRAY SIZE IN NORMALGENERATOR.VERT!
+    std::shared_ptr<std::vector<glm::vec3>> m_playerPositions;
+
 
     // debug values for materials.
     float m_ambientOcclusion = 1;
