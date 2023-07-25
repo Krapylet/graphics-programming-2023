@@ -810,6 +810,7 @@ void PostFXSceneViewerApplication::InitializeModels()
 
     // Player model. Automatically follows parent model.
     loader.SetReferenceMaterial(m_driveOnSandMateral);
+
     std::shared_ptr<Model> carModel = std::make_shared<Model>(loader.Load("models/car/car.obj"));
     m_visualPlayerModel = std::make_shared<SceneModel>("car", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);

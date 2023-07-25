@@ -24,8 +24,22 @@ void ModelLoader::SetReferenceMaterial(std::shared_ptr<Material> referenceMateri
 {
     // Clear the previous attribute map
     m_materialAttributeMap.clear();
+    m_materialPropertyMap.clear();
 
     m_referenceMaterial = referenceMaterial;
+
+    // Link vertex properties to attributes
+    SetMaterialAttribute(VertexAttribute::Semantic::Position, "VertexPosition");
+    SetMaterialAttribute(VertexAttribute::Semantic::Normal, "VertexNormal");
+    SetMaterialAttribute(VertexAttribute::Semantic::Tangent, "VertexTangent");
+    SetMaterialAttribute(VertexAttribute::Semantic::Bitangent, "VertexBitangent");
+    SetMaterialAttribute(VertexAttribute::Semantic::TexCoord0, "VertexTexCoord");
+
+    // Link material properties to uniforms
+    SetMaterialProperty(ModelLoader::MaterialProperty::DiffuseColor, "Color");
+    SetMaterialProperty(ModelLoader::MaterialProperty::DiffuseTexture, "ColorTexture");
+    SetMaterialProperty(ModelLoader::MaterialProperty::NormalTexture, "NormalTexture");
+    SetMaterialProperty(ModelLoader::MaterialProperty::SpecularTexture, "SpecularTexture");
 }
 
 bool ModelLoader::GetCreateMaterials() const
