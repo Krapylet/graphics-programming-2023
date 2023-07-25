@@ -252,6 +252,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
     std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
     
+    m_shadowReplacements = std::make_shared<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>>();
 
     // Shadow map material
     {
@@ -358,7 +359,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Get transform related uniform locations
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
-        ShaderProgram::Location maxReflectionDirectionLocation = shaderProgramPtr->GetUniformLocation("MaxReflectionDirection");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -366,13 +366,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
             {
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-                
-                // This calculation is a little inaccurate, as it doesn't take into account that this angle will be different the further
-                // near the edge of the screen.
-                glm::vec3 right; glm::vec3 up; glm::vec3 forward;
-                camera.ExtractVectors(right, up, forward);
-                glm::vec3 maxReflrectionDirection = glm::normalize(glm::mix(glm::normalize(glm::vec3(1,1,1)), glm::normalize(m_lightDirection), 0.5f));
-                shaderProgram.SetUniform(maxReflectionDirectionLocation, maxReflrectionDirection);
             },
             nullptr
                 );
@@ -414,7 +407,61 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         
     }
 
-    // drive on sand G-buffer material
+    // Sand deformation shadow shader
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/normalGenerator.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/renderer/empty.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+
+        // Create material
+        std::shared_ptr<Material> desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        desertSandShadowMaterial->SetUniformValue("OffsetStrength", 0.3f);
+        desertSandShadowMaterial->SetUniformValue("SampleDistance", 0.01f);
+        desertSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+
+        // Car positions are initialized to 0, since the car hasn't driven anywhere yet.
+        m_playerPositions = std::make_shared<std::vector<glm::vec3>>(m_playerPosSampleCount, glm::vec3(0, 0, 0));
+        std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
+        desertSandShadowMaterial->SetUniformValues("PlayerPositions", playerPosSpan);
+
+        // can maybe take scale into account as well if scale in multiplied in here.
+        desertSandShadowMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
+
+        // add shadow to list of replacements
+        m_shadowReplacements->push_back(std::pair(m_desertSandMaterial, desertSandShadowMaterial));
+    }
+
+    // drive on sand material
     {
         // Load and build shader
         std::vector<const char*> vertexShaderPaths;
@@ -484,6 +531,72 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_driveOnSandMateral->SetUniformValue("DepthMap", displacementMap);
 
         m_driveOnSandMateral->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
+    }
+
+    // drive on sand shadow material
+    {
+        // Load and build shader
+        std::vector<const char*> vertexShaderPaths;
+        vertexShaderPaths.push_back("shaders/version330.glsl");
+        vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+        vertexShaderPaths.push_back("shaders/driveOnSand.vert");
+        Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
+
+        std::vector<const char*> fragmentShaderPaths;
+        fragmentShaderPaths.push_back("shaders/version330.glsl");
+        fragmentShaderPaths.push_back("shaders/renderer/empty.frag");
+        Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
+
+        std::shared_ptr<ShaderProgram> shaderProgramPtr = std::make_shared<ShaderProgram>();
+        shaderProgramPtr->Build(vertexShader, fragmentShader);
+
+        // Get transform related uniform locations
+        ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+        ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location dersertUVLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+        ShaderProgram::Location rightLocation = shaderProgramPtr->GetUniformLocation("Right");
+
+        // Register shader with renderer
+        m_renderer.RegisterShaderProgram(shaderProgramPtr,
+            [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+            {
+                shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+                shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+
+                // Calculate the models position on the desert model in UV coordinates.
+                glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
+                glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+                glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+                glm::vec3 desertPosOnDesert = modelPos - desertPos;
+                float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+                float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+                shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
+
+                // calculate the model's right
+                glm::mat3 modelTransform = m_parentModel->GetTransform()->GetTransformMatrix();
+                glm::vec3 right = glm::normalize(modelTransform[0]);
+                shaderProgram.SetUniform(rightLocation, right);
+            },
+            nullptr
+                );
+
+        // Filter out uniforms that are not material properties
+        // Use for all "pr. object" values
+        ShaderUniformCollection::NameSet filteredUniforms;
+        filteredUniforms.insert("WorldViewMatrix");
+        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("DesertUV");
+        filteredUniforms.insert("Right");
+
+        // Create material
+        // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
+        std::shared_ptr<Material> driveOnSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+        driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        driveOnSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+        driveOnSandShadowMaterial->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
+
+        m_shadowReplacements->push_back(std::pair(m_driveOnSandMateral, driveOnSandShadowMaterial));
     }
 
     // Deferred material
@@ -592,7 +705,39 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
     propMaterial->SetUniformValue("Metalness", m_ambientOcclusion);
     propMaterial->SetUniformValue("Roughness", m_roughness);
     propMaterial->SetUniformValue("Unused", m_unused);
+
+
+    // ---------------- Generate shadow material --------------------
     
+     // Load and build shader
+    std::vector<const char*> shadowFragmentShaderPaths;
+    shadowFragmentShaderPaths.push_back("shaders/version330.glsl");
+    shadowFragmentShaderPaths.push_back("shaders/renderer/empty.frag");
+    Shader shadowFragmentShader = ShaderLoader(Shader::FragmentShader).Load(shadowFragmentShaderPaths);
+
+    std::shared_ptr<ShaderProgram> shadowShaderProgramPtr = std::make_shared<ShaderProgram>();
+    shadowShaderProgramPtr->Build(vertexShader, shadowFragmentShader);
+
+    // Get transform related uniform locations
+    ShaderProgram::Location worldViewMatrixShadowLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+    ShaderProgram::Location worldViewProjMatrixShadowLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+
+    // Register shader with renderer
+    m_renderer.RegisterShaderProgram(shadowShaderProgramPtr,
+        [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+        {
+            shaderProgram.SetUniform(worldViewMatrixShadowLocation, camera.GetViewMatrix() * worldMatrix);
+            shaderProgram.SetUniform(worldViewProjMatrixShadowLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+            //glm::vec3 propPosition = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
+        },
+        nullptr
+            );
+
+    // Create material
+    std::shared_ptr<Material> shadowPropMaterial = std::make_shared<Material>(shadowShaderProgramPtr, filteredUniforms);
+    
+    m_shadowReplacements->push_back(std::pair(propMaterial, shadowPropMaterial));
+
     return propMaterial;
 }
 

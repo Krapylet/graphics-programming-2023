@@ -18,6 +18,10 @@ public:
         int drawcallCollectionIndex = 0);
 
     ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> defaultMaterial,
+        std::shared_ptr<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>> shadowReplacements,
+        int drawcallCollectionIndex = 0);
+
+    ShadowMapRenderPass(std::shared_ptr<Light> light, std::shared_ptr<const Material> defaultMaterial,
         int drawcallCollectionIndex = 0);
 
     void SetVolume(glm::vec3 volumeCenter, glm::vec3 volumeSize);
@@ -37,6 +41,8 @@ private:
     // We have to use two different materials, since the we only want to include the vertexshader from the exception material.
     std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_uniqueMaterials;
     std::shared_ptr<std::vector<std::shared_ptr<const Material>>> m_replacementMaterials;
+
+    std::shared_ptr<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>> m_shadowReplacements;
 
     int m_drawcallCollectionIndex;
 

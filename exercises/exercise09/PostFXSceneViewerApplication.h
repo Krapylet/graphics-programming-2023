@@ -11,6 +11,7 @@
 
 #include <ituGL/scene/SceneModel.h>
 #include <ituGL/asset/ModelLoader.h>
+#include <map>
 
 class Texture2DObject;
 class TextureCubemapObject;
@@ -77,6 +78,9 @@ private:
     std::shared_ptr<Material> m_bloomMaterial;
     std::shared_ptr<Material> m_desertSandMaterial;
 
+    // Contains materias that need unique shadows as keys, and materials providing those shadows as values
+    std::shared_ptr<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>>  m_shadowReplacements;
+
     // Named models
     std::shared_ptr<SceneModel> m_parentModel;
     std::shared_ptr<SceneModel> m_visualPlayerModel;
@@ -109,8 +113,8 @@ private:
 
     // Desert values
     float m_tileSize = 10;
-    float m_desertWidth = 100;
-    float m_desertLength = 300;
+    float m_desertWidth = 50;
+    float m_desertLength = 150;
     float m_desertVertexRows = 100;
     float m_desertVertexCollumns = 100;
     float m_noiseStrength = 0.15f;
