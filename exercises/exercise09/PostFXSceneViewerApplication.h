@@ -95,8 +95,11 @@ private:
 
     // Player control parameters
     bool m_freeCamEnabled = false;
-    float m_playerSpeed = 10;
+    float m_playerCurrentSpeed = 0;
+    float m_playerMaxSpeed = 10;
+    float m_playerAcceleration = 2;
     float m_playerAngularSpeed = 4;
+    float m_playerFriction = 0.1f;
     float m_cameraDistance = 10;
     float m_lastPosSampleTimestamp = 0;
     float m_playerPosSampleFrequency = 4; // how many times pr. second to sample player position.

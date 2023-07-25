@@ -53,6 +53,7 @@ void main()
 	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));
 	// Now that we have the linear depth, we can then transform it to a gradual easing
 	linearDepth /= 10;
+
 	float powerDepth = linearDepth * linearDepth * linearDepth;
 
 	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down

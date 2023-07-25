@@ -99,24 +99,24 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
     float inputAngularSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_A))
         inputAngularSpeed += 1.0f;
-    if (window.IsKeyPressed(GLFW_KEY_D))
+    else if (window.IsKeyPressed(GLFW_KEY_D))
         inputAngularSpeed += -1.0f;
 
     // Then translation
     float inputSpeed = 0;
     if (window.IsKeyPressed(GLFW_KEY_W))
         inputSpeed += -1.0f;
-    if (window.IsKeyPressed(GLFW_KEY_S))
+    else if (window.IsKeyPressed(GLFW_KEY_S))
         inputSpeed += 0.3f;
 
-    // Multiply result by player parameters
-    inputSpeed *= m_playerSpeed;
-    inputAngularSpeed *= m_playerAngularSpeed;
-
     // Double speed if SHIFT is pressed
+    float speedMultiplier = 1;
     if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
-        inputSpeed *= 2.0f;
+        speedMultiplier = 2;
 
+    float potentialSpeed = m_playerCurrentSpeed + inputSpeed * m_playerAcceleration;
+    potentialSpeed = glm::mix(potentialSpeed, 0.0f, m_playerFriction); // add friction to speed.
+    m_playerCurrentSpeed = glm::clamp(potentialSpeed, -m_playerMaxSpeed, m_playerMaxSpeed) * speedMultiplier;
 
     // Find the local directions for the player objects
     // Once again, the reason we have this parent object, is that it makes rotating the player model and camera together much easier. 
@@ -134,7 +134,7 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
     glm::vec3 translation = parentTransform->GetTranslation();
     glm::vec3 rotation = parentTransform->GetRotation();
 
-    translation += forward * inputSpeed * delta;
+    translation += forward * m_playerCurrentSpeed * delta;
     rotation += up * inputAngularSpeed * delta;
 
     // apply the updated translation and rotation to the parent.
