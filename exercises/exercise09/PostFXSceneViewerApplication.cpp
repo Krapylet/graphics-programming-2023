@@ -209,7 +209,7 @@ void PostFXSceneViewerApplication::MakeCameraFollowPlayer() {
     float speedPercentage = abs(m_playerCurrentSpeed) / m_playerMaxSpeed / 2;
     float easingValue = speedPercentage < 0.5f ? 4 * powf(speedPercentage, 3) : 1 - powf(-2 * speedPercentage + 2, 3) / 2;
     float cameraDistance = m_cameraBaseDistance + m_cameraExtraDistance * easingValue;
-    translation += (forward + up / 4.0f) * cameraDistance;
+    translation += (forward + up / m_cameraDepth) * cameraDistance;
     
     // also move the camera based on the offset of the desert
     translation += up * m_offsetStrength / 2.0f;
@@ -246,7 +246,7 @@ void PostFXSceneViewerApplication::InitializeCamera()
     // Create the main camera
     std::shared_ptr<Camera> camera = std::make_shared<Camera>();
     camera->SetViewMatrix(glm::vec3(-2, 1, -2), glm::vec3(0, 0.5f, 0), glm::vec3(0, 1, 0));
-    camera->SetPerspectiveProjectionMatrix(1.0f, 1.0f, 0.1f, m_cameraFarPlane);
+    camera->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
 
     // Create a scene node for the camera
     std::shared_ptr<SceneCamera> sceneCamera = std::make_shared<SceneCamera>("camera", camera);
@@ -408,9 +408,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
         m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
         m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
-        m_desertSandMaterial->SetUniformValue("Unused", m_unused);
-        m_desertSandMaterial->SetUniformValue("Color", glm::vec3(0.8, 0.4, 0.2));
-        m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
+        m_desertSandMaterial->SetUniformValue("Color", m_desertColor);
+        m_desertSandMaterial->SetUniformValue("TileSize", m_tileFrequency);
         m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
         m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
@@ -562,7 +561,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_driveOnSandMateral->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
         m_driveOnSandMateral->SetUniformValue("Metalness", m_metalness);
         m_driveOnSandMateral->SetUniformValue("Roughness", m_roughness);
-        m_driveOnSandMateral->SetUniformValue("Unused", m_unused);
         m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
         m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
         m_driveOnSandMateral->SetUniformValue("DepthMap", m_displacementMap);
@@ -1080,51 +1078,116 @@ void PostFXSceneViewerApplication::RenderGUI()
     // Draw GUI for camera controller
     m_cameraController.DrawGUI(m_imGui);
 
-    if (auto window = m_imGui.UseWindow("Desert sand uniforms"))
+    if (auto window = m_imGui.UseWindow("Player Parameters"))
     {
-        if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
-        {
-            m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        ImGui::BeginDisabled();
+        ImGui::InputFloat("speed", &m_playerCurrentSpeed);
+        ImGui::EndDisabled();
+        ImGui::Separator();
+        ImGui::DragFloat("Max Speed", &m_playerMaxSpeed, 1, 1, 30);
+        ImGui::DragFloat("Acceleration", &m_playerAcceleration, 0.1f, 0.1f, 5.0f);
+        ImGui::DragFloat("Friction", &m_playerFriction, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Turn speed", &m_playerAngularSpeed, 1.0f, 0.1f, 10.0f);
+        ImGui::Separator();
+        ImGui::BeginDisabled();
+        ImGui::InputInt("Pos samples", &m_playerPosSampleCount);
+        ImGui::EndDisabled();
+        ImGui::DragFloat("Sample frequency", &m_playerPosSampleFrequency, 0.1f, 0.0f, 5.0f);
+    }
+
+    if (auto window = m_imGui.UseWindow("Camera Parameters"))
+    {
+        if (ImGui::Checkbox("Freecam", &m_freeCamEnabled)) {
+            m_cameraController.SetEnabled(m_freeCamEnabled);
         }
-        if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1))
-        {
-            m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
+        ImGui::Separator();
+        ImGui::DragFloat("Base distance", &m_cameraBaseDistance, 1, 1, 30);
+        ImGui::DragFloat("Speed distance", &m_cameraExtraDistance, 1, 1, 30);
+        ImGui::DragFloat("Camera weight", &m_cameraDepth, 0.1f, 1, 10);
+        ImGui::Separator();
+        if (ImGui::DragFloat("Far plane", &m_cameraFarPlane, 1, 1, 1000)) {
+            m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
         }
-        if (ImGui::DragFloat("Roughness", &m_roughness, 0.1f, 0, 1))
-        {
-            m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
+        if (ImGui::DragFloat("FOV", &m_cameraFov, 0.1f, 0.1f, 2)) {
+            m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
         }
-        if (ImGui::DragFloat("Unused", &m_unused, 0.1f, 0, 1))
-        {
-            m_desertSandMaterial->SetUniformValue("Unused", m_unused);
+    }
+
+
+    if (auto window = m_imGui.UseWindow("Light Parameters"))
+    {
+        if (ImGui::DragFloat3("Light direction", &m_lightDirection[0], 0.1f, -1, 1)) {
+            m_mainLight->SetDirection(m_lightDirection);
         }
-        if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 10))
-        {
-            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("OffsetStrength", m_offsetStrength);
+        if (ImGui::ColorEdit3("Specular shadow color", &m_specularColor[0])) {
+            m_deferredMaterial->SetUniformValue("SpecularColor", m_specularColor);
+        }
+        ImGui::Separator();
+        if (ImGui::ColorEdit3("Fog color", &m_fogColor[0])) {
+            m_deferredMaterial->SetUniformValue("FogColor", m_fogColor);
+        }
+        if (ImGui::DragFloat("Fog strength", &m_fogStrength, 0.1f, 0, 1)) {
+            m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
+        }
+        if (ImGui::DragFloat("Fog distance", &m_fogDistance, 0.1f, -1, 5)) {
+            m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
+        }
+    }
+
+    if (auto window = m_imGui.UseWindow("Sand Parameters"))
+    {
+        // All the shadows and props automatically detect any change in these values
+        
+        if (ImGui::DragFloat("Offset strength", &m_offsetStrength, 1, -10, 10)) {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+            m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
         }
-        if (ImGui::DragFloat("SampleDistance", &m_sampleDistance, 0.01f, 0.01f, 1))
-        {
-            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("SampleDistance", m_sampleDistance);
+        if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.01f, 0.01f, 1)) {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+            m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
         }
-        if (ImGui::DragFloat("NoiseStrength", &m_noiseStrength, 0.1f, -1, 1))
-        {
-            m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
-        }
-        if (ImGui::DragFloat("NoiseTileFrequency", &m_noiseTilefrequency, 0.1f, 0, 10))
-        {
-            m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
-        }
-        if (ImGui::DragFloat("WaveWidth", &m_waveWidth, 0.1f, 0, 3))
-        {
+
+        ImGui::Separator();
+        if (ImGui::DragFloat("Wave width", &m_waveWidth, 0.1f, 0.1f, 5)) {
             m_desertSandMaterial->SetUniformValue("WaveWidth", m_waveWidth);
         }
-        if (ImGui::DragFloat("WaveStrength", &m_waveStength, 0.1f, 0, 3))
-        {
+        if (ImGui::DragFloat("Wave strength", &m_waveStength, 0.1f, 0, 3)) {
             m_desertSandMaterial->SetUniformValue("WaveStrength", m_waveStength);
         }
 
+        ImGui::Separator();
+        if (ImGui::ColorEdit3("Desert Color", &m_desertColor[0])) {
+            m_desertSandMaterial->SetUniformValue("Color", m_desertColor);
+        }
+        if (ImGui::DragFloat("Ambient occlusion", &m_ambientOcclusion, 0.1f, 0, 1)) {
+            m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
+        }
+        if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1)) {
+            m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
+        }
+        if (ImGui::DragFloat("Roughness", &m_roughness, 0.1f, 0, 1)) {
+            m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
+        }
+       
+
+        ImGui::Separator();
+        if (ImGui::DragFloat2("Normal frequency", &m_tileFrequency[0], 1, 0, 100)) {
+            m_desertSandMaterial->SetUniformValue("TileSize", m_tileFrequency);
+        }
+        if (ImGui::DragFloat2("Noise frequency", &m_noiseTilefrequency[0], 1, 0, 100)) {
+            m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
+        }
+        if (ImGui::DragFloat("Noise strenth", &m_noiseStrength, 0.1f, 0, 1)) {
+            m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
+        }
+
+        ImGui::Separator();
+        ImGui::BeginDisabled();
+        ImGui::InputFloat("Desert Width", &m_desertWidth);
+        ImGui::InputFloat("Desert Length", &m_desertLength);
+        ImGui::InputInt("Vertex collumns", &m_desertVertexCollumns);
+        ImGui::InputInt("Vertex Rows", &m_desertVertexRows);
+        ImGui::EndDisabled();
     }
 
     if (auto window = m_imGui.UseWindow("Post FX"))
@@ -1164,24 +1227,6 @@ void PostFXSceneViewerApplication::RenderGUI()
             if (ImGui::DragFloat("Bloom Intensity", &m_bloomIntensity, 0.1f, 0.0f, 5.0f))
             {
                 m_bloomMaterial->SetUniformValue("Intensity", m_bloomIntensity);
-            }
-
-            ImGui::Separator();
-            if (ImGui::ColorEdit3("Specular Color", &m_specularColor[0]))
-            {
-                m_deferredMaterial->SetUniformValue("SpecularColor", m_specularColor);
-            }
-            if (ImGui::ColorEdit3("Fog Color", &m_fogColor[0]))
-            {
-                m_deferredMaterial->SetUniformValue("FogColor", m_fogColor);
-            }
-            if (ImGui::SliderFloat("Fog strength", &m_fogStrength, 0.0f, 1.0f))
-            {
-                m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
-            }
-            if (ImGui::SliderFloat("Fog distance", &m_fogDistance, -1.0f, 4.0f))
-            {
-                m_deferredMaterial->SetUniformValue("FogDistance", m_fogDistance);
             }
         }
     }

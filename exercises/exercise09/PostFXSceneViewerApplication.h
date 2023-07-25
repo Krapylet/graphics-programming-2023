@@ -93,48 +93,52 @@ private:
     // Depth map that is shared across multiple different shaders
     std::shared_ptr<Texture2DObject> m_displacementMap;
 
-    // Player control parameters
-    bool m_freeCamEnabled = false;
+    // Player parameters
     float m_playerCurrentSpeed = 0;
     float m_playerMaxSpeed = 10;
     float m_playerAcceleration = 1;
     float m_playerAngularSpeed = 4;
     float m_playerFriction = 0.1f;
     float m_lastPosSampleTimestamp = 0;
-    float m_playerPosSampleFrequency = 4; // how many times pr. second to sample player position.
-    int m_playerPosSampleCount = 12; // How many samples to keep at a time. NEEDS TO MATCH ARRAY SIZE IN NORMALGENERATOR.VERT!
+    float m_playerPosSampleFrequency = 2; // how many times pr. second to sample player position.
+    int m_playerPosSampleCount = 24; // How many samples to keep at a time. NEEDS TO MATCH ARRAY SIZE IN NORMALGENERATOR.VERT!
     std::shared_ptr<std::vector<glm::vec3>> m_playerPositions;
 
     // camera parameters
+    bool m_freeCamEnabled = false;
     float m_cameraBaseDistance = 10;
     float m_cameraExtraDistance = 10;
+    float m_cameraDepth = 4;
     float m_cameraFarPlane = 100.0f;
-
-    // debug values for materials.
-    float m_ambientOcclusion = 1;
-    float m_metalness = 0.35f;
-    float m_roughness = 0;
-    float m_unused = 0;
-    float m_sampleDistance = 0.01;
-    float m_offsetStrength = 1;
+    float m_cameraFov = 1.0f;
 
     // Light values
     glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
-    glm::vec3 m_fogColor = glm::vec3(1, 1, 1);
-    glm::vec3 m_specularColor = glm::vec3(1, 1, 1);
+    glm::vec3 m_fogColor = glm::vec3(1, 0.8f, 0.43f);
+    glm::vec3 m_specularColor = glm::vec3(0.28f, 0.06f, 0);
     float m_fogStrength = 0.06;
     float m_fogDistance = -0.06f;
 
     // Desert values
-    float m_tileSize = 10;
-    float m_desertWidth = 600;
-    float m_desertLength = 100;
-    float m_desertVertexCollumns = 600;
-    float m_desertVertexRows = 100;
-    float m_noiseStrength = 0.15f;
-    float m_noiseTilefrequency = 2;
+    glm::vec3 m_desertColor = glm::vec3(0.8, 0.4, 0.2);
+    float m_offsetStrength = 8;
+    float m_sampleDistance = 0.01;
+
     float m_waveWidth = 0.4f;
     float m_waveStength = 0.5f;
+
+    float m_ambientOcclusion = 1;
+    float m_metalness = 0.35f;
+    float m_roughness = 0;
+
+    glm::vec2 m_tileFrequency = glm::vec2(10, 60);
+    glm::vec2 m_noiseTilefrequency = glm::vec2(2, 12);
+    float m_noiseStrength = 0.15f;
+
+    float m_desertWidth = 600;
+    float m_desertLength = 100;
+    int m_desertVertexCollumns = 600;
+    int m_desertVertexRows = 100;
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;

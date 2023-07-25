@@ -18,9 +18,9 @@ uniform sampler2D NormalTexture;
 uniform sampler2D SpecularTexture;
 uniform sampler2D NoiseTexture;
 uniform float NoiseStrength;
-uniform float NoiseTileFrequency;
+uniform vec2 NoiseTileFrequency;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
-uniform float TileSize;
+uniform vec2 TileSize;
 uniform mat4 WorldViewMatrix; // converts from world space to view space
 uniform float AmbientOcclusion;
 uniform float Metalness;
@@ -32,8 +32,8 @@ void main()
 
 	// Read normalTexture
 	// Multiply texcoord with world size to get a tiling texture.
-	float u = mod(TexCoord.x * TileSize, 1);
-	float v = mod(TexCoord.y * TileSize, 1);
+	float u = mod(TexCoord.x * TileSize.x, 1);
+	float v = mod(TexCoord.y * TileSize.y, 1);
 	vec2 normalMap = texture(NormalTexture, vec2(u,v)).xy * 2 - vec2(1);
 
 	// Get implicit Z component

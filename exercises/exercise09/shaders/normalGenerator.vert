@@ -19,12 +19,12 @@ uniform float OffsetStrength;
 uniform float SampleDistance;
 uniform sampler2D DepthMap;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
-uniform vec3[12] PlayerPositions; // Desert pivot position has already been subtracted from these positions, such that the positions are relative to the current deset position
+uniform vec3[24] PlayerPositions; // Desert pivot position has already been subtracted from these positions, such that the positions are relative to the current deset position
 uniform float WaveWidth;
 uniform float WaveStrength;
 
 // constants
-const int playerPositionCount = 12;
+const int playerPositionCount = 24;
 
 float CalculateWaveOffset(float distToClosesPoint){
 	// 6 is the value at which the cos functions ends the first set of waves.
