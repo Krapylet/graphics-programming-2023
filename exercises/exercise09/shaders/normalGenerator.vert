@@ -70,7 +70,7 @@ void main()
 
 	// We use an easing function and the index to reduce the wave effect based on how old the position is.
 	// For now, we just start with a linear function.
-	waveOffset *= 1 - (bestIndexSoFar + 1) / 12;
+	waveOffset *= 1 - (bestIndexSoFar + 1) / playerPositionCount;
 
 
 	// ------- combine offsets -----------
@@ -86,10 +86,10 @@ void main()
 	vec3 bitangent;
 	vec3 normal;
 	// This sample offset should be multiplied with the wave width term,
-	float northWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(1, 0, 0), PlayerPositions[bestIndexSoFar]));
-	float southWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(-1, 0, 0), PlayerPositions[bestIndexSoFar]));
-	float eastWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, 1), PlayerPositions[bestIndexSoFar]));
-	float westWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, -1), PlayerPositions[bestIndexSoFar]));
+	float northWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(1, 0, 0) * WaveWidth, PlayerPositions[bestIndexSoFar]));
+	float southWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(-1, 0, 0)  * WaveWidth, PlayerPositions[bestIndexSoFar]));
+	float eastWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, 1) * WaveWidth, PlayerPositions[bestIndexSoFar]));
+	float westWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, -1) * WaveWidth, PlayerPositions[bestIndexSoFar]));
 	vec4 additionalOffset = vec4(northWaveOffset, southWaveOffset, eastWaveOffset, westWaveOffset);
 	GetTangentSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, additionalOffset, ObjectSize, tangent, bitangent, normal);
 

@@ -90,6 +90,9 @@ private:
     std::shared_ptr<std::vector<std::shared_ptr<SceneModel>>> m_propModels;
     std::shared_ptr<std::vector<std::shared_ptr<Material>>> m_propMaterials;
 
+    // Depth map that is shared across multiple different shaders
+    std::shared_ptr<Texture2DObject> m_displacementMap;
+
     // Player control parameters
     float m_playerSpeed = 10;
     float m_playerAngularSpeed = 4;

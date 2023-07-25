@@ -9,7 +9,7 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd Material_Base_Color.png
-map_Ns Material_Roughness.png
+map_Ns ArchARM.png
 map_Kn Material_Normal_OpenGL.png
 
 newmtl Материал
@@ -20,6 +20,5 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd Sign_Base_Color.png
-map_Ns v_Roughness.png
-map_refl Sign_Metallic.png
+map_Ns signARM.png
 map_Kn Sign_Normal_OpenGL.png

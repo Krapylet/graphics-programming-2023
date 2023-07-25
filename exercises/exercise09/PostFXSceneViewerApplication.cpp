@@ -259,7 +259,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 {
     m_propMaterials = std::make_shared<std::vector<std::shared_ptr<Material>>>();
 
-    std::shared_ptr<Texture2DObject> displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
     
     m_shadowReplacements = std::make_shared<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>>();
 
@@ -341,10 +341,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
         m_defaultMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         m_defaultMaterial->SetUniformValue("Color", glm::vec3(1.0f));
-        m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-        m_defaultMaterial->SetUniformValue("Metalness", m_metalness);
-        m_defaultMaterial->SetUniformValue("Roughness", m_roughness);
-        m_defaultMaterial->SetUniformValue("Unused", m_unused);
     }
 
     // Sand deformation shader
@@ -396,7 +392,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("TileSize", 10.0f);
         m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
-        m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandMaterial->SetUniformValue("DepthMap", m_displacementMap);
         m_desertSandMaterial->SetUniformValue("WaveWidth", m_waveWidth);
         m_desertSandMaterial->SetUniformValue("WaveStrength", m_waveStength);
 
@@ -469,7 +465,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         // Create material
         std::shared_ptr<Material> desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        desertSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+        desertSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
         // can maybe take scale into account as well if scale in multiplied in here.
         desertSandShadowMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
@@ -546,7 +542,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
         m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
-        m_driveOnSandMateral->SetUniformValue("DepthMap", displacementMap);
+        m_driveOnSandMateral->SetUniformValue("DepthMap", m_displacementMap);
 
         m_driveOnSandMateral->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
     }
@@ -617,7 +613,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         std::shared_ptr<Material> driveOnSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         //driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
         //driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-        driveOnSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
+        driveOnSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
         driveOnSandShadowMaterial->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
 
         m_shadowReplacements->push_back(std::pair(m_driveOnSandMateral, driveOnSandShadowMaterial));
@@ -684,7 +680,8 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
     // Load and build shader
     std::vector<const char*> vertexShaderPaths;
     vertexShaderPaths.push_back("shaders/version330.glsl");
-    vertexShaderPaths.push_back("shaders/default.vert");
+    vertexShaderPaths.push_back("shaders/depthMapUtils.glsl");
+    vertexShaderPaths.push_back("shaders/prop.vert");
     Shader vertexShader = ShaderLoader(Shader::VertexShader).Load(vertexShaderPaths);
 
     std::vector<const char*> fragmentShaderPaths;
@@ -699,36 +696,50 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
     // Get transform related uniform locations
     ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
     ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
-    ShaderProgram::Location ambientOcclusionLocation = shaderProgramPtr->GetUniformLocation("AmbientOcclusion");
+    ShaderProgram::Location dersertUVLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
+    ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
+    ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
+
+    auto transformUpdateFunction = [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+    {
+        shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+        shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+
+        // Calculate the models position on the desert model in UV coordinates.
+        // Will not work if desert is rotated.
+        glm::vec3 propPos = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
+        glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+        glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+        glm::vec3 desertPosOnDesert = propPos - desertPos;
+        float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+        float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+        shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
+
+        shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength);
+        shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
+
+    };
 
     // Register shader with renderer
-    m_renderer.RegisterShaderProgram(shaderProgramPtr,
-        [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
-        {
-            shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
-            shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-            glm::vec3 propPosition = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
-            shaderProgram.SetUniform(ambientOcclusionLocation, propPosition.x);
-        },
-        nullptr
-            );
+    m_renderer.RegisterShaderProgram(shaderProgramPtr, transformUpdateFunction, nullptr);
 
     // Filter out uniforms that are not material properties
     // Use for all "pr. object" values
     ShaderUniformCollection::NameSet filteredUniforms;
     filteredUniforms.insert("WorldViewMatrix");
     filteredUniforms.insert("WorldViewProjMatrix");
+    filteredUniforms.insert("DesertUV");
 
     // Create material
     std::shared_ptr<Material> propMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
     m_propMaterials->push_back(propMaterial);
 
+
     // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
     propMaterial->SetUniformValue("Color", glm::vec3(1.0f));
-    //propMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-    propMaterial->SetUniformValue("Metalness", m_ambientOcclusion);
-    propMaterial->SetUniformValue("Roughness", m_roughness);
-    propMaterial->SetUniformValue("Unused", m_unused);
+    propMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+    propMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+    propMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
 
     // ---------------- Generate shadow material --------------------
@@ -743,22 +754,40 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
     shadowShaderProgramPtr->Build(vertexShader, shadowFragmentShader);
 
     // Get transform related uniform locations
-    ShaderProgram::Location worldViewMatrixShadowLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewMatrix");
-    ShaderProgram::Location worldViewProjMatrixShadowLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+    ShaderProgram::Location shadowWorldViewMatrixLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewMatrix");
+    ShaderProgram::Location shadowWorldViewProjMatrixLocation = shadowShaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+    ShaderProgram::Location shadowDersertUVLocation = shadowShaderProgramPtr->GetUniformLocation("DesertUV");
+    ShaderProgram::Location shadowOffsetStrengthLocation = shadowShaderProgramPtr->GetUniformLocation("OffsetStrength");
+    ShaderProgram::Location shadowSampleDistanceLocation = shadowShaderProgramPtr->GetUniformLocation("SampleDistance");
+
+    auto shadowTransformUpdateFunction = [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
+    {
+        shaderProgram.SetUniform(shadowWorldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
+        shaderProgram.SetUniform(shadowWorldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+
+        // Calculate the models position on the desert model in UV coordinates.
+        // Will not work if desert is rotated.
+        glm::vec3 propPos = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
+        glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
+        glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
+        glm::vec3 desertPosOnDesert = propPos - desertPos;
+        float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
+        float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+        shaderProgram.SetUniform(shadowDersertUVLocation, glm::vec2(u, v));
+
+        shaderProgram.SetUniform(shadowOffsetStrengthLocation, m_offsetStrength);
+        shaderProgram.SetUniform(shadowSampleDistanceLocation, m_sampleDistance);
+
+    };
 
     // Register shader with renderer
-    m_renderer.RegisterShaderProgram(shadowShaderProgramPtr,
-        [=](const ShaderProgram& shaderProgram, const glm::mat4& worldMatrix, const Camera& camera, bool cameraChanged)
-        {
-            shaderProgram.SetUniform(worldViewMatrixShadowLocation, camera.GetViewMatrix() * worldMatrix);
-            shaderProgram.SetUniform(worldViewProjMatrixShadowLocation, camera.GetViewProjectionMatrix() * worldMatrix);
-            //glm::vec3 propPosition = m_propModels->at(propIndex)->GetTransform()->GetTranslation();
-        },
-        nullptr
-            );
+    m_renderer.RegisterShaderProgram(shadowShaderProgramPtr, shadowTransformUpdateFunction, nullptr);
 
     // Create material
     std::shared_ptr<Material> shadowPropMaterial = std::make_shared<Material>(shadowShaderProgramPtr, filteredUniforms);
+    shadowPropMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+    shadowPropMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+    shadowPropMaterial->SetUniformValue("DepthMap", m_displacementMap);
     
     m_shadowReplacements->push_back(std::pair(propMaterial, shadowPropMaterial));
 
@@ -1026,32 +1055,18 @@ void PostFXSceneViewerApplication::RenderGUI()
         if (ImGui::DragFloat("AmbientOcclusion", &m_ambientOcclusion, 0.1f, 0, 1))
         {
             m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-            m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-
-            // How to update materials on loaded models.
-            /*
-            int count = m_cannonModel->GetMaterialCount();
-            for (unsigned int i = 0; i < count; i++)
-            {
-                m_cannonModel->GetMaterial(i).SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-            }
-            m_defaultMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
-            */
         }
         if (ImGui::DragFloat("Metalness", &m_metalness, 0.1f, 0, 1))
         {
             m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
-            m_defaultMaterial->SetUniformValue("Metalness", m_metalness);
         }
         if (ImGui::DragFloat("Roughness", &m_roughness, 0.1f, 0, 1))
         {
             m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
-            m_defaultMaterial->SetUniformValue("Roughness", m_roughness);
         }
         if (ImGui::DragFloat("Unused", &m_unused, 0.1f, 0, 1))
         {
             m_desertSandMaterial->SetUniformValue("Unused", m_unused);
-            m_defaultMaterial->SetUniformValue("Unused", m_unused);
         }
         if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 10))
         {

@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 ViewNormal;
 layout (location = 1) in vec3 ViewTangent;
 layout (location = 2) in vec3 ViewBitangent;
-layout (location = 3) in vec3 WorldNormal; // Fragment normal in world(?) space. THis values isn't in tangent space, and causes a bug when mixed with the normalMap.
+layout (location = 3) in vec3 TangentNormal; // Fragment normal in tangent(?) space.
 layout (location = 4) in vec2 TexCoord;
 
 //Outputs
@@ -49,7 +49,7 @@ void main()
 
 	// Combine depth map normal and normal map normal in tangent space using UDN:
 	// - Since Y is the "up" direction, we switch that with z in the formular.
-	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + WorldNormal.x, WorldNormal.y, normalTangentSpace.z + WorldNormal.z));
+	vec3 combinedTangentSpaceNormal =  normalize(vec3(normalTangentSpace.x + TangentNormal.x, TangentNormal.y, normalTangentSpace.z + TangentNormal.z));
 
 	// add pixel noise to the normal. We do this by genrating random vector and lerping randomly towards it.
 	// - We sample with the UV to make each fragment sample from the same noise value each frame. That way we should get temporal consitency rather than random flickering.
