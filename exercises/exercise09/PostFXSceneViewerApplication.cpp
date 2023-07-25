@@ -82,8 +82,6 @@ void PostFXSceneViewerApplication::Update()
     }
         
 
-
-
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);
     m_scene.AcceptVisitor(rendererSceneVisitor);
@@ -112,7 +110,7 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
     // Double speed if SHIFT is pressed
     float speedMultiplier = 1;
     if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
-        speedMultiplier = 2;
+        speedMultiplier = 2 - (1 - window.IsKeyPressed(GLFW_KEY_W));
 
     float potentialSpeed = m_playerCurrentSpeed + inputSpeed * m_playerAcceleration;
     potentialSpeed = glm::mix(potentialSpeed, 0.0f, m_playerFriction); // add friction to speed.
@@ -203,8 +201,16 @@ void PostFXSceneViewerApplication::MakeCameraFollowPlayer() {
     std::shared_ptr<SceneCamera> camera = m_cameraController.GetCamera();
     camera->GetCamera()->ExtractVectors(right, up, forward);
 
-    // Now we can move the camera back and a bit up to get the player model in frame
-    translation += (forward + up / 3.0f) * m_cameraDistance + up * m_offsetStrength / 2.0f;
+    // Now we can move the camera diagonally back
+    // The distance we move it is based off of the current speed.
+    float speedPercentage = abs(m_playerCurrentSpeed) / m_playerMaxSpeed / 2;
+    float easingValue = speedPercentage < 0.5f ? 4 * powf(speedPercentage, 3) : 1 - powf(-2 * speedPercentage + 2, 3) / 2;
+    float cameraDistance = m_cameraBaseDistance + m_cameraExtraDistance * easingValue;
+    translation += (forward + up / 3.0f) * cameraDistance;
+    
+    // also move the camera based on the offset of the desert
+    translation += up * m_offsetStrength / 2.0f;
+
     cameraTransform->SetTranslation(translation);
 
     // Lastly, make the actual camera viewport update according to the transform changes.

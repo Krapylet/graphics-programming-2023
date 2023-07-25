@@ -97,15 +97,17 @@ private:
     bool m_freeCamEnabled = false;
     float m_playerCurrentSpeed = 0;
     float m_playerMaxSpeed = 10;
-    float m_playerAcceleration = 2;
+    float m_playerAcceleration = 1;
     float m_playerAngularSpeed = 4;
     float m_playerFriction = 0.1f;
-    float m_cameraDistance = 10;
     float m_lastPosSampleTimestamp = 0;
     float m_playerPosSampleFrequency = 4; // how many times pr. second to sample player position.
     int m_playerPosSampleCount = 12; // How many samples to keep at a time. NEEDS TO MATCH ARRAY SIZE IN NORMALGENERATOR.VERT!
     std::shared_ptr<std::vector<glm::vec3>> m_playerPositions;
 
+    // camera parameters
+    float m_cameraBaseDistance = 10;
+    float m_cameraExtraDistance = 10;
 
     // debug values for materials.
     float m_ambientOcclusion = 1;
