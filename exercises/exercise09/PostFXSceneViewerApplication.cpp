@@ -64,13 +64,13 @@ void PostFXSceneViewerApplication::Update()
 
     // Update camera controller
     // Old movement method is still worth keeping around for debugging purposes.
-    //m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+    m_cameraController.Update(GetMainWindow(), GetDeltaTime());
 
 
     // Move player object
-    HandlePlayerMovement();
+    //HandlePlayerMovement();
     // make camera follow player object
-    MakeCameraFollowPlayer();
+    //MakeCameraFollowPlayer();
 
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);
@@ -382,8 +382,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         // Create material
         m_desertSandMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        m_desertSandMaterial->SetUniformValue("OffsetStrength", 0.3f);
-        m_desertSandMaterial->SetUniformValue("SampleDistance", 0.01f);
+        m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+        m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         m_desertSandMaterial->SetUniformValue("AmbientOcclusion", m_ambientOcclusion);
         m_desertSandMaterial->SetUniformValue("Metalness", m_metalness);
         m_desertSandMaterial->SetUniformValue("Roughness", m_roughness);
@@ -815,7 +815,7 @@ std::shared_ptr<SceneModel> PostFXSceneViewerApplication::SpawnProp(ModelLoader 
 void PostFXSceneViewerApplication::InitializeModels()
 {
     m_propModels = std::make_shared<std::vector<std::shared_ptr<SceneModel>>>();
-    m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/yoga_studio.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
+    m_skyboxTexture = TextureCubemapLoader::LoadTextureShared("models/skybox/DesertSkybox.hdr", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16F);
 
     m_skyboxTexture->Bind();
     float maxLod;
