@@ -494,6 +494,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
 
                 // Calculate the models position on the desert model in UV coordinates.
+                // Will not work if desert is rotated.
                 glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
                 glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
                 glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();

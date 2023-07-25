@@ -24,7 +24,7 @@ uniform vec3[12] PlayerPositions;
 // constants
 const int playerPositionCount = 12;
 
-float calculateWaveEffect(float distToClosesPoint){
+float CalculateWaveOffset(float distToClosesPoint){
 	float distThreshold = 6;
 	bool distIsWithinEffect = distToClosesPoint < distThreshold;
 
@@ -53,7 +53,7 @@ void main()
 	float bestDistSoFar = 99999999;
 	int bestIndexSoFar = 0;
 	for (int i = 0; i < playerPositionCount; i += 1){
-		float dist = GetManhattenDistance(PlayerPositions[i], VertexPosition);
+		float dist = GetDistance(PlayerPositions[i], VertexPosition);
 
 		// Update best dist and index if new distance is lower
 		// only one branch is evaluated https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.50.pdf
@@ -62,8 +62,8 @@ void main()
 	}
 
 	// Now that we know which point is closes and how far it is, we can compute the effect of the car driving by
-	// We use a cosinus curve to get a nice wave shape.
-	float waveEffect = calculateWaveEffect(bestDistSoFar);
+	// We use a cosinus curve to get a nice wave shape.wd
+	float waveEffect = CalculateWaveOffset(bestDistSoFar);
 
 
 	// We use an easing function and the index to reduce the wave effect based on how old the position is.
@@ -76,10 +76,19 @@ void main()
 
 	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
 
+
+	// ------- Calculate updated normals -----------
+
 	vec3 tangent;
 	vec3 bitangent;
 	vec3 normal;
-	GetTangentSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, ObjectSize, tangent, bitangent, normal);
+	// This sample offset should be multiplied with the wave width term,
+	float northWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(1, 0, 0), PlayerPositions[bestIndexSoFar]));
+	float southWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(-1, 0, 0), PlayerPositions[bestIndexSoFar]));
+	float eastWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, 1), PlayerPositions[bestIndexSoFar]));
+	float westWaveOffset = CalculateWaveOffset(GetDistance(VertexPosition + vec3(0, 0, -1), PlayerPositions[bestIndexSoFar]));
+	vec4 additionalOffset = vec4(northWaveOffset, southWaveOffset, eastWaveOffset, westWaveOffset);
+	GetTangentSpaceVectorsFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength, additionalOffset, ObjectSize, tangent, bitangent, normal);
 
 	// Convert normal and tangents from world space to view space
 	ViewTangent = (WorldViewMatrix * vec4(tangent, 0.0)).xyz;

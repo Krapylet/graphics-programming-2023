@@ -40,7 +40,8 @@ void main()
 	vec3 tangent;
 	vec3 bitangent;
 	vec3 normal;
-	GetTangentSpaceVectorsFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength, DesertSize, tangent, bitangent, normal);
+	vec4 additionalOffset = vec4(0,0,0,0);
+	GetTangentSpaceVectorsFromSample(DesertUV, DepthMap, SampleDistance, OffsetStrength, additionalOffset, DesertSize, tangent, bitangent, normal);
 
 	// Transformation matrix that rotates the player model in the direction of the UV normal.
 	// Hopefully the pivot is in the center of the model...

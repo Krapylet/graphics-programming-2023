@@ -29,7 +29,8 @@ float GetHeightFromSample(vec2 pos, sampler2D depthMap, float sampleDistance, fl
 	return easedOffset;
 }
 
-void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, vec2 objectSize, out vec3 tangent, out vec3 bitangent, out vec3 normal){
+
+void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleDistance, float offsetStrength, vec4 additionalOffset, vec2 objectSize, out vec3 tangent, out vec3 bitangent, out vec3 normal){
 	// "Height" should be stored in z.
 
 	// Sample depth texture to calculate the normal
@@ -40,10 +41,11 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 	vec2 westUV = max(uv + vec2(0,-1) * sampleDistance, vec2(0,0));
 
 	// Since the depth map is black and white, we only need to look at the red value.
-	float depthSampleNorth = GetHeightFromSample(northUV, depthMap, sampleDistance, offsetStrength);
-	float depthSampleSouth = GetHeightFromSample(southUV, depthMap, sampleDistance, offsetStrength);
-	float depthSampleEast = GetHeightFromSample(eastUV, depthMap, sampleDistance, offsetStrength);
-	float depthSampleWest = GetHeightFromSample(westUV, depthMap, sampleDistance, offsetStrength);
+	// Additional offset is used to sum and store offset values other than the ones from the depth map, such as player proximity waves.
+	float depthSampleNorth = GetHeightFromSample(northUV, depthMap, sampleDistance, offsetStrength) + additionalOffset.x;
+	float depthSampleSouth = GetHeightFromSample(southUV, depthMap, sampleDistance, offsetStrength) + additionalOffset.y;
+	float depthSampleEast = GetHeightFromSample(eastUV, depthMap, sampleDistance, offsetStrength) + additionalOffset.z;
+	float depthSampleWest = GetHeightFromSample(westUV, depthMap, sampleDistance, offsetStrength) + additionalOffset.w;
 
 	// change in height across samples pr. unit.
 	float deltaX = (depthSampleNorth - depthSampleSouth)/(northUV.x - southUV.x);
@@ -66,4 +68,8 @@ void GetTangentSpaceVectorsFromSample(vec2 uv, sampler2D depthMap, float sampleD
 // even though sqrt shoudln't be that bad on GPUS, we still use the manhatten distance to be a bit faster
 float GetManhattenDistance(vec3 a, vec3 b){
 	return pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2);
+}
+
+float GetDistance(vec3 a, vec3 b){
+	return sqrt(GetManhattenDistance(a, b));
 }
