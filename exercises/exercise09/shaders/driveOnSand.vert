@@ -59,9 +59,9 @@ void main()
 
 	// Insert rotation matrix lookat values
 	mat4 rotateInPlaceMatrix = {
-		vec4(xaxis.x, xaxis.y, xaxis.z, dot(xaxis, eye)),
-		vec4(yaxis.x, yaxis.y, yaxis.z, dot(yaxis, eye)),
-		vec4(zaxis.x, zaxis.y, zaxis.z, dot(zaxis, eye)),
+		vec4(xaxis.x, xaxis.y, xaxis.z, 0),
+		vec4(yaxis.x, yaxis.y, yaxis.z, 0),
+		vec4(zaxis.x, zaxis.y, zaxis.z, 0),
 		vec4(0, 0, 0, 1)
 	};
 
@@ -73,10 +73,8 @@ void main()
 	gl_Position = WorldViewProjMatrix * vec4(rotatedWorldPos + vertexOffsetVector, 1.0);
 
 	// also rotate normals by the rotation matrix.
-	//TODO
-
 	// Convert normal and tangents from world space to view space
-	ViewTangent = (WorldViewMatrix * vec4(VertexTangent, 0.0)).xyz;
-	ViewBitangent = (WorldViewMatrix * vec4(VertexBitangent, 0.0)).xyz;
-	ViewNormal = (WorldViewMatrix * vec4(VertexNormal, 0.0)).xyz;
+	ViewTangent = (rotateInPlaceMatrix * WorldViewMatrix * vec4(VertexTangent, 0.0)).xyz;
+	ViewBitangent = (rotateInPlaceMatrix * WorldViewMatrix * vec4(VertexBitangent, 0.0)).xyz;
+	ViewNormal = (rotateInPlaceMatrix * WorldViewMatrix * vec4(VertexNormal, 0.0)).xyz;
 }
