@@ -388,6 +388,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("NoiseStrength", m_noiseStrength);
         m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
         m_desertSandMaterial->SetUniformValue("DepthMap", displacementMap);
+        m_desertSandMaterial->SetUniformValue("WaveWidth", m_waveWidth);
+        m_desertSandMaterial->SetUniformValue("WaveStrength", m_waveStength);
 
         // Car positions are initialized to 0, since the car hasn't driven anywhere yet.
         m_playerPositions = std::make_shared<std::vector<glm::vec3>>(m_playerPosSampleCount, glm::vec3(0,0,0));
@@ -430,6 +432,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
         ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
         ShaderProgram::Location playerPositionsLocation = shaderProgramPtr->GetUniformLocation("PlayerPositions");
+        ShaderProgram::Location waveWidthLocation = shaderProgramPtr->GetUniformLocation("WaveWidth");
+        ShaderProgram::Location waveStrengthLocation = shaderProgramPtr->GetUniformLocation("WaveStrength");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -439,6 +443,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
                 shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength);
                 shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
+                shaderProgram.SetUniform(waveWidthLocation, m_waveWidth);
+                shaderProgram.SetUniform(waveStrengthLocation, m_waveStength);
 
                 std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
                 shaderProgram.SetUniforms(playerPositionsLocation, playerPosSpan);
@@ -450,6 +456,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         ShaderUniformCollection::NameSet filteredUniforms;
         filteredUniforms.insert("WorldViewMatrix");
         filteredUniforms.insert("WorldViewProjMatrix");
+
 
         // Create material
         std::shared_ptr<Material> desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
@@ -1054,6 +1061,14 @@ void PostFXSceneViewerApplication::RenderGUI()
         if (ImGui::DragFloat("NoiseTileFrequency", &m_noiseTilefrequency, 0.1f, 0, 10))
         {
             m_desertSandMaterial->SetUniformValue("NoiseTileFrequency", m_noiseTilefrequency);
+        }
+        if (ImGui::DragFloat("WaveWidth", &m_waveWidth, 0.1f, 0, 3))
+        {
+            m_desertSandMaterial->SetUniformValue("WaveWidth", m_waveWidth);
+        }
+        if (ImGui::DragFloat("WaveStrength", &m_waveStength, 0.1f, 0, 3))
+        {
+            m_desertSandMaterial->SetUniformValue("WaveStrength", m_waveStength);
         }
 
     }

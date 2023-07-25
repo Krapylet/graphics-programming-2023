@@ -20,18 +20,21 @@ uniform float SampleDistance;
 uniform sampler2D DepthMap;
 uniform vec2 ObjectSize; // world size of the two lengths of the plane
 uniform vec3[12] PlayerPositions;
+uniform float WaveWidth;
+uniform float WaveStrength;
 
 // constants
 const int playerPositionCount = 12;
 
 float CalculateWaveOffset(float distToClosesPoint){
-	float distThreshold = 6;
-	bool distIsWithinEffect = distToClosesPoint < distThreshold;
+	// 6 is the value at which the cos functions ends the first set of waves.
+	float distThreshold = 6*WaveWidth;
+	bool distIsWithinEffect = distToClosesPoint < distThreshold; 
 
-	// Effect times wave strength.
-	// dist divided with wave width.
-	// distThreshold multiplied with wave width.
-	return distIsWithinEffect ? -cos(distToClosesPoint) - cos(distToClosesPoint/2) : 0;
+	float waveOffset = distIsWithinEffect ? -cos(distToClosesPoint/WaveWidth) - cos(distToClosesPoint/(WaveWidth*2)) : 0;
+	
+	waveOffset *= WaveStrength;
+	return waveOffset;
 }
 
 

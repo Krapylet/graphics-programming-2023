@@ -119,6 +119,8 @@ private:
     float m_desertVertexCollumns = 100;
     float m_noiseStrength = 0.15f;
     float m_noiseTilefrequency = 2;
+    float m_waveWidth = 1;
+    float m_waveStength = 1;
 
     // Framebuffers
     std::shared_ptr<FramebufferObject> m_sceneFramebuffer;
