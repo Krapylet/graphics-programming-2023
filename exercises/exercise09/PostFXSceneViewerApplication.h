@@ -127,10 +127,10 @@ private:
 
     // Desert values
     float m_tileSize = 10;
-    float m_desertWidth = 50;
-    float m_desertLength = 150;
+    float m_desertWidth = 600;
+    float m_desertLength = 100;
+    float m_desertVertexCollumns = 600;
     float m_desertVertexRows = 100;
-    float m_desertVertexCollumns = 100;
     float m_noiseStrength = 0.15f;
     float m_noiseTilefrequency = 2;
     float m_waveWidth = 0.4f;

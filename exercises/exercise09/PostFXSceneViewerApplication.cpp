@@ -162,12 +162,12 @@ void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
     playerPos -= m_desertModel->GetTransform()->GetTranslation();
 
     // for some reason there's a wierd global offset towards x, which we take care of here.
-    playerPos -= glm::vec3(1, 0, 0);  
+    playerPos -= glm::vec3(0.5f, 0, 0);  
 
     // move the logged player position slightly behind the player, so that the waves arent right underneath them.
     glm::mat3 transformMatrix = m_parentModel->GetTransform()->GetTransformMatrix();
     glm::vec3 forward = glm::normalize(transformMatrix[2]);
-    playerPos += forward;
+    playerPos += forward * 2.0f;
 
     m_playerPositions->insert(m_playerPositions->begin(), playerPos);
 
@@ -209,7 +209,7 @@ void PostFXSceneViewerApplication::MakeCameraFollowPlayer() {
     float speedPercentage = abs(m_playerCurrentSpeed) / m_playerMaxSpeed / 2;
     float easingValue = speedPercentage < 0.5f ? 4 * powf(speedPercentage, 3) : 1 - powf(-2 * speedPercentage + 2, 3) / 2;
     float cameraDistance = m_cameraBaseDistance + m_cameraExtraDistance * easingValue;
-    translation += (forward + up / 3.0f) * cameraDistance;
+    translation += (forward + up / 4.0f) * cameraDistance;
     
     // also move the camera based on the offset of the desert
     translation += up * m_offsetStrength / 2.0f;
@@ -884,7 +884,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     planeModel->AddMaterial(m_desertSandMaterial);
     m_desertModel = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(m_desertModel);
-    m_desertModel->GetTransform()->SetTranslation(glm::vec3(1, 0, 0));
+    m_desertModel->GetTransform()->SetTranslation(glm::vec3(0, 0, -280));
 
     //// Load models
     // Parent model shoudl have an empty model.
