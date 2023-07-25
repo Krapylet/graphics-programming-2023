@@ -47,7 +47,7 @@ void main()
 	// ------- Vertex position height offset --------
 	
 	// final vertex position (for opengl rendering, *AND* for lighting)
-	float vertexOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
+	float depthOffset = GetHeightFromSample(TexCoord, DepthMap, SampleDistance, OffsetStrength);
 
 
 	// ------ Vetex position player dist offset ------
@@ -66,18 +66,18 @@ void main()
 
 	// Now that we know which point is closes and how far it is, we can compute the effect of the car driving by
 	// We use a cosinus curve to get a nice wave shape.wd
-	float waveEffect = CalculateWaveOffset(bestDistSoFar);
-
+	float waveOffset = CalculateWaveOffset(bestDistSoFar);
 
 	// We use an easing function and the index to reduce the wave effect based on how old the position is.
-
+	// For now, we just start with a linear function.
+	waveOffset *= 1 - (bestIndexSoFar + 1) / 12;
 
 
 	// ------- combine offsets -----------
 
-	vec3 vertexOffsetVector = vec3(0, vertexOffset + waveEffect, 0);
+	vec3 vertexOffset = vec3(0, depthOffset + waveOffset, 0);
 
-	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffsetVector, 1.0);
+	gl_Position = WorldViewProjMatrix * vec4(VertexPosition + vertexOffset, 1.0);
 
 
 	// ------- Calculate updated normals -----------

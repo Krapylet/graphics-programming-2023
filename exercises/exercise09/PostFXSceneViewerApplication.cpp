@@ -109,13 +109,13 @@ void PostFXSceneViewerApplication::HandlePlayerMovement() {
     // Find the local directions for the player objects
     // Once again, the reason we have this parent object, is that it makes rotating the player model and camera together much easier. 
     std::shared_ptr<Transform> parentTransform = m_parentModel->GetTransform();
-    glm::mat3 transposed = parentTransform->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
+    glm::mat3 transformMatrix = parentTransform->GetTransformMatrix(); // glm::transpose(parentTransform->GetTranslationMatrix());
 
     // Keeping unusde directions here so i can remember where they are placed.
     // NB: They are not normalized.
-    glm::vec3 right = glm::normalize(transposed[0]);
-    glm::vec3 up = glm::normalize(transposed[1]);
-    glm::vec3 forward = glm::normalize(transposed[2]);
+    glm::vec3 right = glm::normalize(transformMatrix[0]);
+    glm::vec3 up = glm::normalize(transformMatrix[1]);
+    glm::vec3 forward = glm::normalize(transformMatrix[2]);
 
     // Apply speed over time to the translation
     float delta = GetDeltaTime();
@@ -147,6 +147,15 @@ void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
 
     // Add newest value to the front
     glm::vec3 playerPos = m_parentModel->GetTransform()->GetTranslation();
+
+    // for some reason there's a wierd global offset towards x, which we take care of here.
+    playerPos -= glm::vec3(1, 0, 0);  
+
+    // move the logged player position slightly behind the player, so that the waves arent right underneath them.
+    glm::mat3 transformMatrix = m_parentModel->GetTransform()->GetTransformMatrix();
+    glm::vec3 forward = glm::normalize(transformMatrix[2]);
+    playerPos += forward;
+
     m_playerPositions->insert(m_playerPositions->begin(), playerPos);
 
     // delete the last value
