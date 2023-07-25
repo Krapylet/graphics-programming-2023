@@ -243,7 +243,7 @@ void PostFXSceneViewerApplication::InitializeCamera()
     // Create the main camera
     std::shared_ptr<Camera> camera = std::make_shared<Camera>();
     camera->SetViewMatrix(glm::vec3(-2, 1, -2), glm::vec3(0, 0.5f, 0), glm::vec3(0, 1, 0));
-    camera->SetPerspectiveProjectionMatrix(1.0f, 1.0f, 0.1f, 100.0f);
+    camera->SetPerspectiveProjectionMatrix(1.0f, 1.0f, 0.1f, m_cameraFarPlane);
 
     // Create a scene node for the camera
     std::shared_ptr<SceneCamera> sceneCamera = std::make_shared<SceneCamera>("camera", camera);
@@ -649,6 +649,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         fragmentShaderPaths.push_back("shaders/utils.glsl");
         fragmentShaderPaths.push_back("shaders/lambert-ggx.glsl");
         fragmentShaderPaths.push_back("shaders/lighting.glsl");
+        fragmentShaderPaths.push_back("shaders/depthMapUtils.glsl");
         fragmentShaderPaths.push_back("shaders/renderer/deferred.frag");
         Shader fragmentShader = ShaderLoader(Shader::FragmentShader).Load(fragmentShaderPaths);
 
@@ -670,6 +671,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         ShaderProgram::Location invViewMatrixLocation = shaderProgramPtr->GetUniformLocation("InvViewMatrix");
         ShaderProgram::Location invProjMatrixLocation = shaderProgramPtr->GetUniformLocation("InvProjMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location cameraCarDistanceLocation = shaderProgramPtr->GetUniformLocation("CameraCarDistance");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -681,6 +683,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                     shaderProgram.SetUniform(invProjMatrixLocation, glm::inverse(camera.GetProjectionMatrix()));
                 }
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+                float camDist = glm::length(m_cameraController.GetCamera()->GetTransform()->GetTranslation() - m_parentModel->GetTransform()->GetTranslation());
+                shaderProgram.SetUniform(cameraCarDistanceLocation, camDist);
             },
             m_renderer.GetDefaultUpdateLightsFunction(*shaderProgramPtr)
         );
@@ -690,6 +694,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_deferredMaterial->SetUniformValue("FogColor", m_fogColor);
         m_deferredMaterial->SetUniformValue("SpecularColor", m_specularColor);
         m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
+        m_deferredMaterial->SetUniformValue("CameraFarPlane", m_cameraFarPlane);
+        m_deferredMaterial->SetUniformValue("FogDistance", m_fogDistance);
     }
 }
 
@@ -1169,6 +1175,10 @@ void PostFXSceneViewerApplication::RenderGUI()
             if (ImGui::SliderFloat("Fog strength", &m_fogStrength, 0.0f, 1.0f))
             {
                 m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
+            }
+            if (ImGui::SliderFloat("Fog distance", &m_fogDistance, -1.0f, 4.0f))
+            {
+                m_deferredMaterial->SetUniformValue("FogDistance", m_fogDistance);
             }
         }
     }
