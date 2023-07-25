@@ -64,7 +64,7 @@ void PostFXSceneViewerApplication::Update()
 
 
     // Toggle freecam
-    if (GetMainWindow().IsKeyPressed(GLFW_KEY_F)) {
+    if (GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE)) {
         m_freeCamEnabled = !m_freeCamEnabled;
         m_cameraController.SetEnabled(m_freeCamEnabled); //We set this bool so we don't also have to press space to enable the freecam.
     }
@@ -157,6 +157,9 @@ void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
 
     // Add newest value to the front
     glm::vec3 playerPos = m_parentModel->GetTransform()->GetTranslation();
+
+    // Subtract deset pos from player pos to the the relative positions
+    playerPos -= m_desertModel->GetTransform()->GetTranslation();
 
     // for some reason there's a wierd global offset towards x, which we take care of here.
     playerPos -= glm::vec3(1, 0, 0);  
@@ -277,7 +280,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 {
     m_propMaterials = std::make_shared<std::vector<std::shared_ptr<Material>>>();
 
-    m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOT.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
+    m_displacementMap = Texture2DLoader::LoadTextureShared("textures/SandDisplacementMapPOTLong.png", TextureObject::FormatR, TextureObject::InternalFormatR, true, false, false);
     
     m_shadowReplacements = std::make_shared<std::vector<std::pair<std::shared_ptr<const Material>, std::shared_ptr<const Material>>>>();
 
@@ -528,9 +531,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                 glm::vec3 modelPos = m_parentModel->GetTransform()->GetTranslation();
                 glm::vec3 desertPos = m_desertModel->GetTransform()->GetTranslation();
                 glm::vec3 desertScale = m_desertModel->GetTransform()->GetScale();
-                glm::vec3 desertPosOnDesert = modelPos - desertPos;
-                float u = desertPosOnDesert.x / m_desertLength * desertScale.x + 0.5;
-                float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
+                glm::vec3 posOnDesert = modelPos - desertPos;
+                float u = posOnDesert.x / m_desertLength * desertScale.x + 0.5;
+                float v = posOnDesert.z / m_desertWidth * desertScale.z + 0.5;
                 shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
 
                 // calculate the model's right
