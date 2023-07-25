@@ -427,6 +427,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Get transform related uniform locations
         ShaderProgram::Location worldViewMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewMatrix");
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
+        ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
+        ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
+        ShaderProgram::Location playerPositionsLocation = shaderProgramPtr->GetUniformLocation("PlayerPositions");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -434,6 +437,11 @@ void PostFXSceneViewerApplication::InitializeMaterials()
             {
                 shaderProgram.SetUniform(worldViewMatrixLocation, camera.GetViewMatrix() * worldMatrix);
                 shaderProgram.SetUniform(worldViewProjMatrixLocation, camera.GetViewProjectionMatrix() * worldMatrix);
+                shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength);
+                shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
+
+                std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
+                shaderProgram.SetUniforms(playerPositionsLocation, playerPosSpan);
             },
             nullptr
                 );
@@ -445,14 +453,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         // Create material
         std::shared_ptr<Material> desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        desertSandShadowMaterial->SetUniformValue("OffsetStrength", 0.3f);
-        desertSandShadowMaterial->SetUniformValue("SampleDistance", 0.01f);
         desertSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
-
-        // Car positions are initialized to 0, since the car hasn't driven anywhere yet.
-        m_playerPositions = std::make_shared<std::vector<glm::vec3>>(m_playerPosSampleCount, glm::vec3(0, 0, 0));
-        std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
-        desertSandShadowMaterial->SetUniformValues("PlayerPositions", playerPosSpan);
 
         // can maybe take scale into account as well if scale in multiplied in here.
         desertSandShadowMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
@@ -879,10 +880,10 @@ void PostFXSceneViewerApplication::InitializeRenderer()
         if (!m_mainLight->GetShadowMap())
         {
             m_mainLight->CreateShadowMap(glm::vec2(512, 512));
-            m_mainLight->SetShadowBias(0.001f);
+            m_mainLight->SetShadowBias(0.01f);
         }
         std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial, m_shadowReplacements));
-        shadowMapRenderPass->SetVolume(m_visualPlayerModel->GetTransform()->GetTranslation(), glm::vec3(100.0f));
+        shadowMapRenderPass->SetVolume(m_visualPlayerModel->GetTransform()->GetTranslation(), glm::vec3(30.0f));
         m_renderer.AddRenderPass(std::move(shadowMapRenderPass));
     }
 
