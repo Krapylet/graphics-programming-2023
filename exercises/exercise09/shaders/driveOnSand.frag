@@ -29,5 +29,5 @@ void main()
 	//FragAlbedo = vec4(ViewNormal.xy, 0,1);
 
 	// ambientOcclusion, metalness, roughness, unused,
-	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, Unused); //texture(SpecularTexture, TexCoord);
+	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, Unused);
 }

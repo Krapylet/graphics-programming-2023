@@ -25,7 +25,6 @@ uniform mat4 WorldViewMatrix; // converts from world space to view space
 uniform float AmbientOcclusion;
 uniform float Metalness;
 uniform float Roughness;
-uniform float Unused;
 
 
 void main()
@@ -69,6 +68,6 @@ void main()
 
 	FragAlbedo = vec4(Color, 1);
 
-	// ambientOcclusion, metalness, roughness, unused,
-	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, Unused); //texture(SpecularTexture, TexCoord);
+	// ambientOcclusion, metalness, roughness, unused.
+	FragOthers = vec4(AmbientOcclusion, Metalness, Roughness, 0);
 }

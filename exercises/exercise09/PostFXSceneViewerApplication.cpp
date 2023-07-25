@@ -417,6 +417,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_desertSandMaterial->SetUniformValue("WaveWidth", m_waveWidth);
         m_desertSandMaterial->SetUniformValue("WaveStrength", m_waveStength);
 
+        // Technically more of an object propperty than a material property, but adding it to the Transform update function will cause it to be set every frame, which is just kind of a waste.
+        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
+
         // Car positions are initialized to 0, since the car hasn't driven anywhere yet.
         m_playerPositions = std::make_shared<std::vector<glm::vec3>>(m_playerPosSampleCount, glm::vec3(0,0,0));
         std::span<const glm::vec3> playerPosSpan(*m_playerPositions.get());
@@ -428,11 +431,6 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         std::shared_ptr<Texture2DObject> normalMap = Texture2DLoader::LoadTextureShared("textures/SandNormalMap.png", TextureObject::FormatRGB, TextureObject::InternalFormatRGB16);
         m_desertSandMaterial->SetUniformValue("NormalTexture", normalMap);
-
-
-        // can maybe take scale into account as well if scale in multiplied in here.
-        m_desertSandMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
-        
     }
 
     // Sand deformation shadow shader
@@ -481,14 +479,19 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Filter out uniforms that are not material properties
         ShaderUniformCollection::NameSet filteredUniforms;
         filteredUniforms.insert("WorldViewMatrix");
-        filteredUniforms.insert("WorldViewProjMatrix");
+        filteredUniforms.insert("OffsetStrength");
 
+        // These uniforms are tehnically material properties, but since they are sat in the transformUpdateFunction, we don't really need
+        // To allocate the extra memory to them.
+        filteredUniforms.insert("SampleDistance");
+        filteredUniforms.insert("PlayerPositions");
+        filteredUniforms.insert("WaveWidth");
+        filteredUniforms.insert("WaveStrength");
+        filteredUniforms.insert("WorldViewProjMatrix");
 
         // Create material
         std::shared_ptr<Material> desertSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
         desertSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
-
-        // can maybe take scale into account as well if scale in multiplied in here.
         desertSandShadowMaterial->SetUniformValue("ObjectSize", glm::vec2(m_desertLength, m_desertWidth));
 
         // add shadow to list of replacements
@@ -560,11 +563,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         m_driveOnSandMateral->SetUniformValue("Metalness", m_metalness);
         m_driveOnSandMateral->SetUniformValue("Roughness", m_roughness);
         m_driveOnSandMateral->SetUniformValue("Unused", m_unused);
-
         m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
         m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
         m_driveOnSandMateral->SetUniformValue("DepthMap", m_displacementMap);
-
         m_driveOnSandMateral->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
     }
 
@@ -628,12 +629,12 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         filteredUniforms.insert("WorldViewProjMatrix");
         filteredUniforms.insert("DesertUV");
         filteredUniforms.insert("Right");
+        filteredUniforms.insert("OffsetStrength");
+        filteredUniforms.insert("SampleDistance");
 
         // Create material
         // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
         std::shared_ptr<Material> driveOnSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        //driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
-        //driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         driveOnSandShadowMaterial->SetUniformValue("DepthMap", m_displacementMap);
         driveOnSandShadowMaterial->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
 
@@ -669,6 +670,7 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         filteredUniforms.insert("LightPosition");
         filteredUniforms.insert("LightDirection");
         filteredUniforms.insert("LightAttenuation");
+        filteredUniforms.insert("CameraCarDistance");
 
         // Get transform related uniform locations
         ShaderProgram::Location invViewMatrixLocation = shaderProgramPtr->GetUniformLocation("InvViewMatrix");
@@ -759,6 +761,8 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
     filteredUniforms.insert("WorldViewMatrix");
     filteredUniforms.insert("WorldViewProjMatrix");
     filteredUniforms.insert("DesertUV");
+    filteredUniforms.insert("OffsetStrength");
+    filteredUniforms.insert("SampleDistance");
 
     // Create material
     std::shared_ptr<Material> propMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
@@ -767,8 +771,6 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
 
     // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
     propMaterial->SetUniformValue("Color", glm::vec3(1.0f));
-    propMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
-    propMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
     propMaterial->SetUniformValue("DepthMap", m_displacementMap);
 
 
@@ -815,8 +817,6 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
 
     // Create material
     std::shared_ptr<Material> shadowPropMaterial = std::make_shared<Material>(shadowShaderProgramPtr, filteredUniforms);
-    shadowPropMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
-    shadowPropMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
     shadowPropMaterial->SetUniformValue("DepthMap", m_displacementMap);
     
     m_shadowReplacements->push_back(std::pair(propMaterial, shadowPropMaterial));
