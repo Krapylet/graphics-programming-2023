@@ -124,7 +124,7 @@ void ShadowMapRenderPass::Render()
         }
 
         bool drawcallShouldUseReplacementMaterial = false;
-        int shadowIndex = 0;
+        std::shared_ptr<const Material> replacementMaterial;
 
         // this loop is here for the exam project.
         // If replacement shadows are defined in pairs, don't look through the other vector set.
@@ -134,7 +134,7 @@ void ShadowMapRenderPass::Render()
                 drawcallShouldUseReplacementMaterial = drawcallInfo.material.GetShaderProgram() == m_shadowReplacements->at(i).first->GetShaderProgram();
 
                 if (drawcallShouldUseReplacementMaterial) {
-                    shadowIndex = i;
+                    replacementMaterial = m_shadowReplacements->at(i).second;
                     break;
                 }
             }
@@ -147,7 +147,7 @@ void ShadowMapRenderPass::Render()
                 drawcallShouldUseReplacementMaterial = drawcallInfo.material.GetShaderProgram() == m_uniqueMaterials->at(i)->GetShaderProgram();
 
                 if (drawcallShouldUseReplacementMaterial) {
-                    shadowIndex = i;
+                    replacementMaterial = m_replacementMaterials->at(i);
                     break;
                 }
             }
@@ -155,7 +155,6 @@ void ShadowMapRenderPass::Render()
 
         // Use unique material if nessecary 
         if (drawcallShouldUseReplacementMaterial) {
-            std::shared_ptr<const Material> replacementMaterial = m_shadowReplacements->at(shadowIndex).second;
             replacementMaterial->Use();
             renderer.UpdateTransforms(replacementMaterial->GetShaderProgram(), drawcallInfo.worldMatrixIndex, first);
             drawcallInfo.drawcall.Draw();

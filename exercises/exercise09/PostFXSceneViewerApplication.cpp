@@ -555,6 +555,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         ShaderProgram::Location worldViewProjMatrixLocation = shaderProgramPtr->GetUniformLocation("WorldViewProjMatrix");
         ShaderProgram::Location dersertUVLocation = shaderProgramPtr->GetUniformLocation("DesertUV");
         ShaderProgram::Location rightLocation = shaderProgramPtr->GetUniformLocation("Right");
+        ShaderProgram::Location offsetStrengthLocation = shaderProgramPtr->GetUniformLocation("OffsetStrength");
+        ShaderProgram::Location sampleDistanceLocation = shaderProgramPtr->GetUniformLocation("SampleDistance");
 
         // Register shader with renderer
         m_renderer.RegisterShaderProgram(shaderProgramPtr,
@@ -576,6 +578,10 @@ void PostFXSceneViewerApplication::InitializeMaterials()
                 glm::mat3 modelTransform = m_parentModel->GetTransform()->GetTransformMatrix();
                 glm::vec3 right = glm::normalize(modelTransform[0]);
                 shaderProgram.SetUniform(rightLocation, right);
+
+
+                shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength);
+                shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
             },
             nullptr
                 );
@@ -591,8 +597,8 @@ void PostFXSceneViewerApplication::InitializeMaterials()
         // Create material
         // These initial uniforms values are saved even when the material is copied as new instances are generated when a model is loaded.
         std::shared_ptr<Material> driveOnSandShadowMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
-        driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
-        driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
+        //driveOnSandShadowMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
+        //driveOnSandShadowMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
         driveOnSandShadowMaterial->SetUniformValue("DepthMap", displacementMap);
         driveOnSandShadowMaterial->SetUniformValue("DesertSize", glm::vec2(m_desertLength, m_desertWidth));
 
@@ -875,8 +881,8 @@ void PostFXSceneViewerApplication::InitializeRenderer()
             m_mainLight->CreateShadowMap(glm::vec2(512, 512));
             m_mainLight->SetShadowBias(0.001f);
         }
-        std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial));
-        shadowMapRenderPass->SetVolume(glm::vec3(-3.0f * m_mainLight->GetDirection()), glm::vec3(6.0f));
+        std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial, m_shadowReplacements));
+        shadowMapRenderPass->SetVolume(m_visualPlayerModel->GetTransform()->GetTranslation(), glm::vec3(100.0f));
         m_renderer.AddRenderPass(std::move(shadowMapRenderPass));
     }
 
@@ -1029,7 +1035,7 @@ void PostFXSceneViewerApplication::RenderGUI()
             m_desertSandMaterial->SetUniformValue("Unused", m_unused);
             m_defaultMaterial->SetUniformValue("Unused", m_unused);
         }
-        if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 1))
+        if (ImGui::DragFloat("OffsetStrength", &m_offsetStrength, 0.1f, 0, 10))
         {
             m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("OffsetStrength", m_offsetStrength);
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);

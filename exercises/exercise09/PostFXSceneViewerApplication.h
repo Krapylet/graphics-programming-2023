@@ -109,7 +109,7 @@ private:
     float m_offsetStrength = 1;
 
     // Light values
-    glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -3.14f);
+    glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
 
     // Desert values
     float m_tileSize = 10;
