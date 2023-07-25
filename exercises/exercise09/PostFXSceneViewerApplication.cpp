@@ -62,15 +62,27 @@ void PostFXSceneViewerApplication::Update()
 {
     Application::Update();
 
+
+    // Toggle freecam
+    if (GetMainWindow().IsKeyPressed(GLFW_KEY_F)) {
+        m_freeCamEnabled = !m_freeCamEnabled;
+        m_cameraController.SetEnabled(m_freeCamEnabled); //We set this bool so we don't also have to press space to enable the freecam.
+    }
+
     // Update camera controller
     // Old movement method is still worth keeping around for debugging purposes.
-    m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+    if (m_freeCamEnabled) {
+        m_cameraController.Update(GetMainWindow(), GetDeltaTime());
+    }
+    else {
+        // Move player object
+        HandlePlayerMovement();
+        // make camera follow player object
+        MakeCameraFollowPlayer();
+    }
+        
 
 
-    // Move player object
-    //HandlePlayerMovement();
-    // make camera follow player object
-    //MakeCameraFollowPlayer();
 
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);

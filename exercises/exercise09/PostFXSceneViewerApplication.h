@@ -94,6 +94,7 @@ private:
     std::shared_ptr<Texture2DObject> m_displacementMap;
 
     // Player control parameters
+    bool m_freeCamEnabled = false;
     float m_playerSpeed = 10;
     float m_playerAngularSpeed = 4;
     float m_cameraDistance = 10;
