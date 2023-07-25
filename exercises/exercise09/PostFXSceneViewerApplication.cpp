@@ -681,6 +681,9 @@ void PostFXSceneViewerApplication::InitializeMaterials()
 
         // Create material
         m_deferredMaterial = std::make_shared<Material>(shaderProgramPtr, filteredUniforms);
+        m_deferredMaterial->SetUniformValue("FogColor", m_fogColor);
+        m_deferredMaterial->SetUniformValue("SpecularColor", m_specularColor);
+        m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
     }
 }
 
@@ -1146,6 +1149,20 @@ void PostFXSceneViewerApplication::RenderGUI()
             if (ImGui::DragFloat("Bloom Intensity", &m_bloomIntensity, 0.1f, 0.0f, 5.0f))
             {
                 m_bloomMaterial->SetUniformValue("Intensity", m_bloomIntensity);
+            }
+
+            ImGui::Separator();
+            if (ImGui::ColorEdit3("Specular Color", &m_specularColor[0]))
+            {
+                m_deferredMaterial->SetUniformValue("SpecularColor", m_specularColor);
+            }
+            if (ImGui::ColorEdit3("Fog Color", &m_fogColor[0]))
+            {
+                m_deferredMaterial->SetUniformValue("FogColor", m_fogColor);
+            }
+            if (ImGui::SliderFloat("Fog strength", &m_fogStrength, 0.0f, 1.0f))
+            {
+                m_deferredMaterial->SetUniformValue("FogStrength", m_fogStrength);
             }
         }
     }

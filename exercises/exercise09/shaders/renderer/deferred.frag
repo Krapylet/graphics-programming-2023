@@ -11,6 +11,9 @@ uniform sampler2D NormalTexture;
 uniform sampler2D OthersTexture;
 uniform mat4 InvViewMatrix;
 uniform mat4 InvProjMatrix;
+uniform vec3 FogColor; 
+uniform float FogStrength;
+uniform vec3 SpecularColor;
 
 void main()
 {
@@ -35,9 +38,30 @@ void main()
 	data.ambientOcclusion = others.x;
 	data.roughness = others.y;
 	data.metalness = others.z;
-	data.shadowColor = vec3(0.8, 0.4, 0.2); 
+	data.shadowColor = SpecularColor; //vec3(0.8, 0.4, 0.2); 
 
-	// Compute lighting
 	vec3 lighting = ComputeLighting(position, data, viewDir, true);
-	FragColor = vec4(lighting, 1.0f);
+
+	// Add dust fade to final color after lighting
+	// Camera Clipping planes
+	float near = 0.1;
+	float far  = 100.0; 
+
+	// nonlinear depth
+	float depth = texture(DepthTexture, TexCoord).r;;
+	float ndc = depth * 2.0 - 1.0; 
+	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));
+	// Now that we have the linear depth, we can then transform it to a gradual easing
+	linearDepth /= 10;
+	float powerDepth = linearDepth * linearDepth * linearDepth;
+
+	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
+	powerDepth -= 0.1f;
+	powerDepth = max(0.1f, powerDepth);
+
+	
+	// Add uniform bool/int multiplied to powerDepth to enable/disable fog during playtest.
+	vec3 fadedLight = mix(lighting, FogColor, powerDepth * FogStrength);
+
+	FragColor = vec4(fadedLight, 1.0f);
 }

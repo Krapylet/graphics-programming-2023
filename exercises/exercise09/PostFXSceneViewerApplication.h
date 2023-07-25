@@ -114,6 +114,9 @@ private:
 
     // Light values
     glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
+    glm::vec3 m_fogColor = glm::vec3(1, 1, 1);
+    glm::vec3 m_specularColor = glm::vec3(1, 1, 1);
+    float m_fogStrength = 0;
 
     // Desert values
     float m_tileSize = 10;
