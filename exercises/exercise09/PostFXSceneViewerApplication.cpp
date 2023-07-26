@@ -898,9 +898,8 @@ void PostFXSceneViewerApplication::InitializeModels()
 
     // Generate two props and see if they get different materials that react to them.
     // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.
-    std::shared_ptr<SceneModel> archA = SpawnProp(loader, "archA", "models/arch/arch.obj");
-    std::shared_ptr<SceneModel> archB = SpawnProp(loader, "archB", "models/arch/arch.obj");
-    archB->GetTransform()->SetTranslation(glm::vec3(2, 0, 2));
+    std::shared_ptr<SceneModel> archA = SpawnProp(loader, "arch", "models/arch/arch.obj");
+    std::shared_ptr<SceneModel> sphinx = SpawnProp(loader, "sphinx", "models/sphinx/sphinx.obj");
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
