@@ -900,6 +900,7 @@ void PostFXSceneViewerApplication::InitializeModels()
     // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.
     std::shared_ptr<SceneModel> archA = SpawnProp(loader, "arch", "models/arch/arch.obj");
     std::shared_ptr<SceneModel> sphinx = SpawnProp(loader, "sphinx", "models/sphinx/sphinx.obj");
+    std::shared_ptr<SceneModel> ruin = SpawnProp(loader, "ruin", "models/ruin/ruin.obj");
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()

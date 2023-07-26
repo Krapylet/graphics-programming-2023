@@ -1,0 +1,24 @@
+# Blender 3.6.1 MTL File: 'None'
+# www.blender.org
+
+newmtl 3_-_Default
+Ns 99.999977
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd FbxTemp_0001.png
+map_Kn FbxTemp_0001_normal.png
+
+newmtl Bo55a03C
+Ns 100.000015
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd FbxTemp_0002.png
+map_Kn FbxTemp_0002_normal.png
