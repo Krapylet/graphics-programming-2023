@@ -44,10 +44,11 @@ private:
     std::shared_ptr<Material> GeneratePropMaterial(int propIndex);
     std::shared_ptr<SceneModel> SpawnProp(ModelLoader loader, const char* objectName, const char* modelPath);
 
+    void HandleCinematicEffects();
     void HandlePlayerMovement();
     void MakeCameraFollowPlayer();
     void AttemptToPrependNewPlayerPosition();
-
+    
     void RenderGUI();
 
 private:
@@ -109,12 +110,13 @@ private:
     float m_cameraBaseDistance = 10;
     float m_cameraExtraDistance = 10;
     float m_cameraDepth = 4;
-    float m_cameraFarPlane = 100.0f;
+    float m_cameraFarPlane = 600.0f;
+    float m_cameraFarPlaneReduction = 0.85f;
     float m_cameraFov = 1.0f;
 
     // Light values
     glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
-    glm::vec3 m_fogColor = glm::vec3(1, 0.8f, 0.43f);
+    glm::vec3 m_fogColor = glm::vec3(0.8824, 0.749f, 0.4824f);
     glm::vec3 m_specularColor = glm::vec3(0.28f, 0.06f, 0);
     float m_fogStrength = 0.06;
     float m_fogDistance = -0.06f;

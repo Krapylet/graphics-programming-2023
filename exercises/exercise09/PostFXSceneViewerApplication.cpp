@@ -80,11 +80,55 @@ void PostFXSceneViewerApplication::Update()
         // make camera follow player object
         MakeCameraFollowPlayer();
     }
-        
+       
+    // change fog etc. based on player position.
+    HandleCinematicEffects();
 
     // Add the scene nodes to the renderer
     RendererSceneVisitor rendererSceneVisitor(m_renderer);
     m_scene.AcceptVisitor(rendererSceneVisitor);
+}
+
+void PostFXSceneViewerApplication::HandleCinematicEffects() {
+
+    // Map completion can handle the map being moved, but not rotated.
+    float desertPos = m_desertModel->GetTransform()->GetTranslation().z;
+    float playerPos = m_parentModel->GetTransform()->GetTranslation().z;
+    float mapCompletionPercentage = 1 - (playerPos - desertPos + 0.5 * m_desertWidth) / m_desertWidth;
+
+    // Don't do anything at the start of the map
+    // Just keep regular far plane.
+    if (mapCompletionPercentage < 0.1) {
+        m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
+        m_composeMaterial->SetUniformValue("ColorFilter", m_colorFilter);
+        return;
+    }
+    // reduce farplane while between 10% and 17.5% complete
+    else if (mapCompletionPercentage < 0.175) {
+        float easing = (mapCompletionPercentage - 0.1) / (0.175 - 0.1);
+        float reductionPercent = m_cameraFarPlaneReduction * easing;
+        m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane * (1 - reductionPercent));
+        m_composeMaterial->SetUniformValue("ColorFilter", m_colorFilter - glm::vec3(0.2, 0.4, 0.5) * reductionPercent);
+        return;
+    }
+    // Stay on max reduction while between 17.5% and 60%
+    else if (mapCompletionPercentage < 0.6) {
+        m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane * (1 - m_cameraFarPlaneReduction));
+        m_composeMaterial->SetUniformValue("ColorFilter", m_colorFilter - glm::vec3(0.2, 0.4, 0.5) * m_cameraFarPlaneReduction);
+        return;
+    }
+    // ramp down from 60% until 75% complete
+    else if (mapCompletionPercentage < 0.75) {
+        float easing = 1 - (mapCompletionPercentage - 0.6) / (0.75 - 0.6);
+        float reductionPercent = m_cameraFarPlaneReduction * easing;
+        m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane * (1 - reductionPercent));
+        m_composeMaterial->SetUniformValue("ColorFilter", m_colorFilter - glm::vec3(0.2, 0.4, 0.5) * reductionPercent);
+        return;
+    }
+
+    // after 75%, just stay at the default.
+    m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
+    m_composeMaterial->SetUniformValue("ColorFilter", m_colorFilter);
 }
 
 // Moves the player transform based in player input. Control with WASD
@@ -926,7 +970,7 @@ void PostFXSceneViewerApplication::InitializeModels()
         std::shared_ptr<SceneModel> temple = SpawnProp(loader, "temple", "models/temple/temple.obj");
         temple->GetTransform()->SetTranslation(glm::vec3(14, 0, -520));
         temple->GetTransform()->SetRotation(glm::vec3(0, -3, 0));
-        temple->GetTransform()->SetScale(glm::vec3(5, 5, 15));
+        temple->GetTransform()->SetScale(glm::vec3(5, 5, 5));
         std::shared_ptr<SceneModel> gaveL = SpawnProp(loader, "gravestone large", "models/gravestone/gravestone_large.obj");
         gaveL->GetTransform()->SetTranslation(glm::vec3(0, -10, -564));
         gaveL->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
@@ -1159,9 +1203,17 @@ void PostFXSceneViewerApplication::RenderGUI()
         if (ImGui::DragFloat("Far plane", &m_cameraFarPlane, 1, 1, 1000)) {
             m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
         }
+        ImGui::DragFloat("Far plane reduction", &m_cameraFarPlaneReduction, 0.01f, 0, 1);
         if (ImGui::DragFloat("FOV", &m_cameraFov, 0.1f, 0.1f, 2)) {
             m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
         }
+
+        float desertPos = m_desertModel->GetTransform()->GetTranslation().z;
+        float playerPos = m_parentModel->GetTransform()->GetTranslation().z;
+        float mapCompletionPercentage = 1-(playerPos - desertPos + 0.5 * m_desertWidth) / m_desertWidth;
+        ImGui::BeginDisabled();
+        ImGui::InputFloat("Completion %", &mapCompletionPercentage);
+        ImGui::EndDisabled();
     }
 
 
@@ -1189,7 +1241,7 @@ void PostFXSceneViewerApplication::RenderGUI()
     {
         // All the shadows and props automatically detect any change in these values
         
-        if (ImGui::DragFloat("Offset strength", &m_offsetStrength, 1, -10, 10)) {
+        if (ImGui::DragFloat("Offset strength", &m_offsetStrength, 1, -20, 20)) {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
             m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("OffsetStrength", m_offsetStrength);
         }
