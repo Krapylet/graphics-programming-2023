@@ -68,7 +68,6 @@ void main()
 	float distFromCenter = length(TexCoord-vec2(0.5f, 0.5f));
 	float edgeStrength = cos(distFromCenter * 3.14 + 3.14)/1.2 + 1;
 
-	// We also don't want it to completely block out the furthest edges, so we shift it a tiny bit down
 	float fogBlend = clamp(quadraticDepth * FogStrength * edgeStrength - FogDistance, 0, 1);
 
 	vec3 fadedLight = mix(lighting, FogColor, fogBlend);
