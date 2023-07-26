@@ -311,6 +311,7 @@ void PostFXSceneViewerApplication::InitializeLights()
     std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
     directionalLight->SetDirection(m_lightDirection); // It will be normalized inside the function
     directionalLight->SetIntensity(3.0f);
+    //directionalLight->SetPosition(glm::vec3(0, 300, 600));
 //    directionalLight->SetColor(glm::vec3(0, 0, 1));
     m_scene.AddSceneNode(std::make_shared<SceneLight>("directional light", directionalLight));
 
@@ -853,7 +854,8 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
         float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
         shaderProgram.SetUniform(shadowDersertUVLocation, glm::vec2(u, v));
 
-        shaderProgram.SetUniform(shadowOffsetStrengthLocation, m_offsetStrength);
+        float propScale = m_propModels->at(propIndex)->GetTransform()->GetScale().y;
+        shaderProgram.SetUniform(shadowOffsetStrengthLocation, m_offsetStrength/propScale);
         shaderProgram.SetUniform(shadowSampleDistanceLocation, m_sampleDistance);
 
     };
@@ -930,12 +932,13 @@ void PostFXSceneViewerApplication::InitializeModels()
     planeModel->AddMaterial(m_desertSandMaterial);
     m_desertModel = std::make_shared<SceneModel>("Plane", planeModel);
     m_scene.AddSceneNode(m_desertModel);
-    m_desertModel->GetTransform()->SetTranslation(glm::vec3(0, 0, -280));
+    m_desertModel->GetTransform()->SetTranslation(glm::vec3(0, 0, -300));
 
     //// Load models
     // Parent model shoudl have an empty model.
     m_parentModel = std::make_shared<SceneModel>("parent", nullptr);
     m_scene.AddSceneNode(m_parentModel);
+    m_parentModel->GetTransform()->SetTranslation(glm::vec3(0, 0, -20));
 
     // Player model. Automatically follows parent model.
     loader.SetReferenceMaterial(m_driveOnSandMateral);
@@ -944,8 +947,12 @@ void PostFXSceneViewerApplication::InitializeModels()
     m_visualPlayerModel = std::make_shared<SceneModel>("car", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
 
-    // Generate all the props for the world
+    
     {
+        std::shared_ptr<SceneModel> gaveL = SpawnProp(loader, "gravestone large", "models/gravestone/gravestone_large.obj");
+        gaveL->GetTransform()->SetTranslation(glm::vec3(0, -10, -564));
+        gaveL->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
+        gaveL->GetTransform()->SetScale(glm::vec3(2, 2, 2));
         std::shared_ptr<SceneModel> arch = SpawnProp(loader, "arch", "models/arch/arch.obj");
         arch->GetTransform()->SetTranslation(glm::vec3(0, -1, -28));
         arch->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
@@ -974,10 +981,7 @@ void PostFXSceneViewerApplication::InitializeModels()
         temple->GetTransform()->SetTranslation(glm::vec3(14, 0, -520));
         temple->GetTransform()->SetRotation(glm::vec3(0, -3, 0));
         temple->GetTransform()->SetScale(glm::vec3(5, 5, 5));
-        std::shared_ptr<SceneModel> gaveL = SpawnProp(loader, "gravestone large", "models/gravestone/gravestone_large.obj");
-        gaveL->GetTransform()->SetTranslation(glm::vec3(0, -10, -564));
-        gaveL->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
-        gaveL->GetTransform()->SetScale(glm::vec3(2, 2, 2));
+
         std::shared_ptr<SceneModel> gaveM1 = SpawnProp(loader, "gravestone medium 1", "models/gravestone/gravestone_medium1.obj");
         gaveM1->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
         gaveM1->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
@@ -999,6 +1003,7 @@ void PostFXSceneViewerApplication::InitializeModels()
         gaveS3->GetTransform()->SetRotation(glm::vec3(0, 0.2, 0));
         gaveS3->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
     }
+    
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
@@ -1051,11 +1056,11 @@ void PostFXSceneViewerApplication::InitializeRenderer()
     {
         if (!m_mainLight->GetShadowMap())
         {
-            m_mainLight->CreateShadowMap(glm::vec2(512, 512));
-            m_mainLight->SetShadowBias(0.01f);
+            m_mainLight->CreateShadowMap(glm::vec2(512*8, 512*8));
+            m_mainLight->SetShadowBias(0.002f);
         }
         std::unique_ptr<ShadowMapRenderPass> shadowMapRenderPass(std::make_unique<ShadowMapRenderPass>(m_mainLight, m_shadowMapMaterial, m_shadowReplacements));
-        shadowMapRenderPass->SetVolume(m_visualPlayerModel->GetTransform()->GetTranslation(), glm::vec3(30.0f));
+        shadowMapRenderPass->SetVolume(glm::vec3(0, 130, -270), glm::vec3(600.0f));
         m_renderer.AddRenderPass(std::move(shadowMapRenderPass));
     }
 
@@ -1190,7 +1195,7 @@ void PostFXSceneViewerApplication::RenderGUI()
         ImGui::BeginDisabled();
         ImGui::InputInt("Pos samples", &m_playerPosSampleCount);
         ImGui::EndDisabled();
-        ImGui::DragFloat("Sample frequency", &m_playerPosSampleFrequency, 0.1f, 0.0f, 5.0f);
+        ImGui::DragFloat("Sample frequency", &m_playerPosSampleFrequency, 1, 0.0f, 100);
     }
 
     if (auto window = m_imGui.UseWindow("Camera Parameters"))

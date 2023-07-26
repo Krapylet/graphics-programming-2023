@@ -94,7 +94,7 @@ void ShadowMapRenderPass::Render()
     device.GetViewport(currentViewport.x, currentViewport.y, currentViewport.z, currentViewport.w);
 
     // Set viewport to texture size
-    device.SetViewport(0, 0, 512, 512);
+    device.SetViewport(0, 0, 512*8, 512*8);
 
     // Backup current camera
     const Camera& currentCamera = renderer.GetCurrentCamera();

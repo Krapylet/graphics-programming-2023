@@ -101,7 +101,7 @@ private:
     float m_playerAngularSpeed = 4;
     float m_playerFriction = 0.1f;
     float m_lastPosSampleTimestamp = 0;
-    float m_playerPosSampleFrequency = 2; // how many times pr. second to sample player position.
+    float m_playerPosSampleFrequency = 30; // how many times pr. second to sample player position.
     int m_playerPosSampleCount = 24; // How many samples to keep at a time. NEEDS TO MATCH ARRAY SIZE IN NORMALGENERATOR.VERT!
     std::shared_ptr<std::vector<glm::vec3>> m_playerPositions;
 
@@ -115,7 +115,7 @@ private:
     float m_cameraFov = 1.0f;
 
     // Light values
-    glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
+    glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, 2);
     glm::vec3 m_fogColor = glm::vec3(0.8824, 0.749f, 0.4824f);
     glm::vec3 m_specularColor = glm::vec3(0.20f, 0.06f, 0);
     float m_fogStrength = 0.06;
