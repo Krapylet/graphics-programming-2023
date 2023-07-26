@@ -199,6 +199,8 @@ void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
     if (isTooEarlyForNextSample)
         return;
 
+    m_lastPosSampleTimestamp = GetCurrentTime();
+
     // Add newest value to the front
     glm::vec3 playerPos = m_parentModel->GetTransform()->GetTranslation();
 
@@ -206,7 +208,8 @@ void PostFXSceneViewerApplication::AttemptToPrependNewPlayerPosition() {
     playerPos -= m_desertModel->GetTransform()->GetTranslation();
 
     // for some reason there's a wierd global offset towards x, which we take care of here.
-    playerPos -= glm::vec3(0.5f, 0, 0);  
+    // It seems to be different on the two computers???
+    playerPos -= glm::vec3(0, 0, 0);  
 
     // move the logged player position slightly behind the player, so that the waves arent right underneath them.
     glm::mat3 transformMatrix = m_parentModel->GetTransform()->GetTransformMatrix();

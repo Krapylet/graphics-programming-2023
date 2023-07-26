@@ -7,10 +7,10 @@ Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 illum 1
-map_Kd Friedmann_Tim_Church_Ground_Diffuse.png
+map_Kd Church_Ground_Diffuse.png
 map_Ns ground_ARM.png
-map_d Friedmann_Tim_Church_Ground_Alpha.png
-map_Kn normalmap_lp_DefaultMaterial_Normal.1001.png
+map_d Church_Ground_Alpha.png
+map_Kn Church_Ground_Normal.png
 
 newmtl Wallrocks
 Ka 1.000000 1.000000 1.000000
@@ -19,9 +19,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 1
-map_Kd Friedmann_Tim_Rocks_Tilemap_Diffuse.png
+map_Kd Rocks_Tilemap_Diffuse.png
 map_Ns rocks_ARM.png
-map_Bump -bm 1.000000 Rocks_normal.png
+map_Kn Rocks_Tilemap_normal.png
 
 newmtl pillar
 Ka 1.000000 1.000000 1.000000
@@ -41,6 +41,6 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 1
-map_Kd Friedmann_Tim_Church_Trimsheet_Diffuse.png
+map_Kd Church_Trimsheet_Diffuse.png
 map_Ns trim_ARM.png
 map_Kn Church_Trimsheet_normal.png

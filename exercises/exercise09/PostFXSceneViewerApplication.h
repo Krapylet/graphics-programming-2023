@@ -117,7 +117,7 @@ private:
     // Light values
     glm::vec3 m_lightDirection = glm::vec3(0.0f, -1.0f, -2.14f);
     glm::vec3 m_fogColor = glm::vec3(0.8824, 0.749f, 0.4824f);
-    glm::vec3 m_specularColor = glm::vec3(0.28f, 0.06f, 0);
+    glm::vec3 m_specularColor = glm::vec3(0.20f, 0.06f, 0);
     float m_fogStrength = 0.06;
     float m_fogDistance = -0.06f;
 
@@ -154,7 +154,7 @@ private:
     float m_contrast;
     float m_hueShift;
     float m_saturation;
-    glm::vec3 m_colorFilter;
+    glm::vec3 m_colorFilter = glm::vec3(1, 1, 0.9);
     int m_blurIterations;
     glm::vec2 m_bloomRange;
     float m_bloomIntensity;
