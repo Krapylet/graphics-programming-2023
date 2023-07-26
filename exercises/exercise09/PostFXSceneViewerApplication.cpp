@@ -1185,6 +1185,10 @@ void PostFXSceneViewerApplication::RenderGUI()
     {
         ImGui::BeginDisabled();
         ImGui::InputFloat("speed", &m_playerCurrentSpeed);
+        float desertPos = m_desertModel->GetTransform()->GetTranslation().z;
+        float playerPos = m_parentModel->GetTransform()->GetTranslation().z;
+        float mapCompletionPercentage = 1 - (playerPos - desertPos + 0.5 * m_desertWidth) / m_desertWidth;
+        ImGui::InputFloat("Completion %", &mapCompletionPercentage);
         ImGui::EndDisabled();
         ImGui::Separator();
         ImGui::DragFloat("Max Speed", &m_playerMaxSpeed, 1, 1, 30);
@@ -1215,13 +1219,6 @@ void PostFXSceneViewerApplication::RenderGUI()
         if (ImGui::DragFloat("FOV", &m_cameraFov, 0.1f, 0.1f, 2)) {
             m_cameraController.GetCamera()->GetCamera()->SetPerspectiveProjectionMatrix(m_cameraFov, 1.0f, 0.1f, m_cameraFarPlane);
         }
-
-        float desertPos = m_desertModel->GetTransform()->GetTranslation().z;
-        float playerPos = m_parentModel->GetTransform()->GetTranslation().z;
-        float mapCompletionPercentage = 1-(playerPos - desertPos + 0.5 * m_desertWidth) / m_desertWidth;
-        ImGui::BeginDisabled();
-        ImGui::InputFloat("Completion %", &mapCompletionPercentage);
-        ImGui::EndDisabled();
     }
 
 
