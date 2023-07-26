@@ -745,7 +745,8 @@ std::shared_ptr<Material> PostFXSceneViewerApplication::GeneratePropMaterial(int
         float v = desertPosOnDesert.z / m_desertWidth * desertScale.z + 0.5;
         shaderProgram.SetUniform(dersertUVLocation, glm::vec2(u, v));
 
-        shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength);
+        float propScale = m_propModels->at(propIndex)->GetTransform()->GetScale().y;
+        shaderProgram.SetUniform(offsetStrengthLocation, m_offsetStrength/propScale);
         shaderProgram.SetUniform(sampleDistanceLocation, m_sampleDistance);
 
     };
@@ -896,12 +897,61 @@ void PostFXSceneViewerApplication::InitializeModels()
     m_visualPlayerModel = std::make_shared<SceneModel>("car", carModel);
     m_scene.AddSceneNode(m_visualPlayerModel);
 
-    // Generate two props and see if they get different materials that react to them.
-    // Afterwards, thest that they can retrieve locations and use it to set alpha or something like that.
-    std::shared_ptr<SceneModel> archA = SpawnProp(loader, "arch", "models/arch/arch.obj");
-    std::shared_ptr<SceneModel> sphinx = SpawnProp(loader, "sphinx", "models/sphinx/sphinx.obj");
-    std::shared_ptr<SceneModel> ruin = SpawnProp(loader, "ruin", "models/ruin/ruin.obj");
-    std::shared_ptr<SceneModel> temple = SpawnProp(loader, "temple", "models/temple/temple.obj");
+    // Generate all the props for the world
+    {
+        std::shared_ptr<SceneModel> arch = SpawnProp(loader, "arch", "models/arch/arch.obj");
+        arch->GetTransform()->SetTranslation(glm::vec3(0, -1, -28));
+        arch->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
+        arch->GetTransform()->SetScale(glm::vec3(1, 1, 1));
+        std::shared_ptr<SceneModel> sphinx1 = SpawnProp(loader, "sphinx1", "models/sphinx/sphinx.obj");
+        sphinx1->GetTransform()->SetTranslation(glm::vec3(13.5, 4.3, -166));
+        sphinx1->GetTransform()->SetRotation(glm::vec3(-0.3, 0, -0.3));
+        sphinx1->GetTransform()->SetScale(glm::vec3(1, 1, 1));
+        std::shared_ptr<SceneModel> sphinx2 = SpawnProp(loader, "sphinx2", "models/sphinx/sphinx.obj");
+        sphinx2->GetTransform()->SetTranslation(glm::vec3(-13, 5, -303));
+        sphinx2->GetTransform()->SetRotation(glm::vec3(-0.8, 0, 0.5));
+        sphinx2->GetTransform()->SetScale(glm::vec3(1, 1, 1));
+        std::shared_ptr<SceneModel> ruin1 = SpawnProp(loader, "ruin1", "models/ruin/ruin.obj");
+        ruin1->GetTransform()->SetTranslation(glm::vec3(-4.4, -2, -216));
+        ruin1->GetTransform()->SetRotation(glm::vec3(-0.1f, -0.3f, -0.5));
+        ruin1->GetTransform()->SetScale(glm::vec3(2, 2, 2));
+        std::shared_ptr<SceneModel> ruin2 = SpawnProp(loader, "ruin2", "models/ruin/ruin.obj");
+        ruin2->GetTransform()->SetTranslation(glm::vec3(-11, -5.5, -85));
+        ruin2->GetTransform()->SetRotation(glm::vec3(-0.2, -1, 0));
+        ruin2->GetTransform()->SetScale(glm::vec3(1.5, 1.5, 1.5));
+        std::shared_ptr<SceneModel> ruin3 = SpawnProp(loader, "ruin3", "models/ruin/ruin.obj");
+        ruin3->GetTransform()->SetTranslation(glm::vec3(2.8, -6.1, -342));
+        ruin3->GetTransform()->SetRotation(glm::vec3(0, -3.8, 0));
+        ruin3->GetTransform()->SetScale(glm::vec3(3, 3, 3));
+        std::shared_ptr<SceneModel> temple = SpawnProp(loader, "temple", "models/temple/temple.obj");
+        temple->GetTransform()->SetTranslation(glm::vec3(14, 0, -520));
+        temple->GetTransform()->SetRotation(glm::vec3(0, -3, 0));
+        temple->GetTransform()->SetScale(glm::vec3(5, 5, 15));
+        std::shared_ptr<SceneModel> gaveL = SpawnProp(loader, "gravestone large", "models/gravestone/gravestone_large.obj");
+        gaveL->GetTransform()->SetTranslation(glm::vec3(0, -10, -564));
+        gaveL->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
+        gaveL->GetTransform()->SetScale(glm::vec3(2, 2, 2));
+        std::shared_ptr<SceneModel> gaveM1 = SpawnProp(loader, "gravestone medium 1", "models/gravestone/gravestone_medium1.obj");
+        gaveM1->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
+        gaveM1->GetTransform()->SetRotation(glm::vec3(0, 0, 0));
+        gaveM1->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
+        std::shared_ptr<SceneModel> gaveM2 = SpawnProp(loader, "gravestone medium 2", "models/gravestone/gravestone_medium2.obj");
+        gaveM2->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
+        gaveM2->GetTransform()->SetRotation(glm::vec3(0, -0.3, 0));
+        gaveM2->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
+        std::shared_ptr<SceneModel> gaveS1 = SpawnProp(loader, "gravestone small 1", "models/gravestone/gravestone_small1.obj");
+        gaveS1->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
+        gaveS1->GetTransform()->SetRotation(glm::vec3(0, -0.2, 0));
+        gaveS1->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
+        std::shared_ptr<SceneModel> gaveS2 = SpawnProp(loader, "gravestone small 2", "models/gravestone/gravestone_small2.obj");
+        gaveS2->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
+        gaveS2->GetTransform()->SetRotation(glm::vec3(0, -0.3, 0));
+        gaveS2->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
+        std::shared_ptr<SceneModel> gaveS3 = SpawnProp(loader, "gravestone small 3", "models/gravestone/gravestone_small3.obj");
+        gaveS3->GetTransform()->SetTranslation(glm::vec3(-10.5, -0.1, -111.1));
+        gaveS3->GetTransform()->SetRotation(glm::vec3(0, 0.2, 0));
+        gaveS3->GetTransform()->SetScale(glm::vec3(0.25, 0.25, 0.25));
+    }
 }
 
 void PostFXSceneViewerApplication::InitializeFramebuffers()
@@ -1141,11 +1191,11 @@ void PostFXSceneViewerApplication::RenderGUI()
         
         if (ImGui::DragFloat("Offset strength", &m_offsetStrength, 1, -10, 10)) {
             m_desertSandMaterial->SetUniformValue("OffsetStrength", m_offsetStrength);
-            m_driveOnSandMateral->SetUniformValue("OffsetStrength", m_offsetStrength);
+            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("OffsetStrength", m_offsetStrength);
         }
         if (ImGui::DragFloat("Sample distance", &m_sampleDistance, 0.01f, 0.01f, 1)) {
             m_desertSandMaterial->SetUniformValue("SampleDistance", m_sampleDistance);
-            m_driveOnSandMateral->SetUniformValue("SampleDistance", m_sampleDistance);
+            m_visualPlayerModel->GetModel()->SetUniformOnAllMaterials("SampleDistance", m_sampleDistance);
         }
 
         ImGui::Separator();
